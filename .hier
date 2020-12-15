@@ -1,0 +1,20 @@
+# dir|ldir|file|lfile|link|llink
+# path                                              type  mode  link
+# git|gitsrc
+# path                                              type  pull  depth
+
+# local
+.                                                   ldir  0750
+.gitignore                                          lfile 0640
+LICENSE                                             lfile 0640
+README.md                                           lfile 0640
+dothier                                             lfile 0750
+
+# main
+# TODO: examples
+
+# deleted
+# TODO: examples
+
+# vim: set sw=2 ts=2 et :
+# eof

@@ -1,0 +1,409 @@
+#!/usr/bin/env bash
+#
+
+# commandline
+_home="${1:-$HOME}"
+_hier="${2:-.hier}"
+
+# debug
+_debug="no"
+
+# defaults
+_def_dirmode="0755"
+_def_filemode="0644"
+_def_link="no"
+_def_gitpull="no"
+_def_gitdepth="1"
+
+check_support()
+{
+  case "$OSTYPE" in
+    darwin*|freebsd*|openbsd*|linux*)
+      true
+      ;;
+    *)
+      echo "E: unsupported OS $OSTYPE"
+      exit
+      ;;
+  esac
+} # check_support
+
+stat_mode()
+{
+  local _path
+  _path="${1:-/dev/null}"
+
+  case "$OSTYPE" in
+    darwin*|freebsd*|openbsd*)
+      _stat="$(stat -f "%Mp%Lp" "$_path")"
+      ;;
+    linux*)
+      _stat="$(stat -c "%#a" "$_path")"
+      ;;
+  esac
+  echo "$_stat"
+} # stat_mode
+
+change_mode()
+{
+  local _path _mode
+  _path="$1"
+  _mode="$2"
+
+  case "$OSTYPE" in
+    darwin*|freebsd*|openbsd*)
+      chmod -h "$_mode" "$_path"
+      ;;
+    linux*)
+      [[ ! -L "$_path" ]] && echo chmod "$_mode" "$_path"
+      ;;
+    esac
+} # change_mode
+
+exec_link()
+{
+  local _src="$1"
+  local _dst="$2"
+  local _path="$3"
+  local _type="$4"
+  local _mode="${5:-$_def_filemode}"
+  local _link="${6:-$_def_link}"
+
+  local _src_path="$_src/$_path"
+  local _dst_path="$_dst/$_path"
+
+  [[ "$_debug" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+
+  # dir & file
+  if [[ "$_type" == "dir" ]] || [[ "$_type" == "file" ]]
+  then
+
+    if [[ "$_link" != "yes" ]] && [[ "$_link" != "no" ]]
+    then
+      _dst_path="$_dst/$_link"
+    fi
+
+  # link
+  elif [[ "$_type" == "link" ]]
+  then
+
+    if [[ "$_link" != "yes" ]] && [[ "$_link" != "no" ]]
+    then
+
+      # absolute link
+      if [[ "$_link" =~ ^(/.*)?$ ]]
+      then
+        _src_path="$_link"
+
+      # relative link
+      else
+        _src_path="$_src/$_link"
+      fi
+    fi
+  fi
+
+  # check source
+  if [[ ! -e "$_src_path" ]]
+  then
+    echo "E: $_src_path not readable!"
+    return
+  fi
+
+  # check destination
+  if [[ -e "$_dst_path" ]]
+  then
+    # remove dir
+    if [[ ! -L "$_dst_path" ]] && [[ -d "$_dst_path" ]] && [[ "$_type" != "dir" ]]
+    then
+      rm -r "$_dst_path"
+    fi
+
+    # remove file
+    if [[ ! -L "$_dst_path" ]] && [[ -f "$_dst_path" ]] && [[ "$_type" != "file" ]]
+    then
+      rm "$_dst_path"
+    fi
+
+    # wrong link
+    if [[ "$(readlink "$_dst_path")" != "$_src_path" ]] && [[ "$_link" != "no" ]]
+    then
+
+      # remove dir
+      if [[ -d "$_dst_path" ]]
+      then
+        rm -r "$_dst_path"
+
+      # remove file
+      else
+        rm "$_dst_path"
+      fi
+    fi
+
+    # remove no link
+    if [[ -L "$_dst_path" ]] && [[ "$_link" == "no" ]]
+    then
+      rm "$_dst_path"
+      return
+    fi
+  fi
+
+  # delete mode
+  if [[ "$_mode" == "0000" ]]
+  then
+    if [[ -L "$_dst_path" ]]
+    then
+      echo rm "$_dst_path"
+      return
+    fi
+  fi
+
+  # create link
+  if [[ "$_link" != "no" ]]
+  then
+    if [[ ! -L "$_dst_path" ]]
+    then
+      ln -s "$_src_path" "$_dst_path"
+    fi
+  fi
+
+  # check mode
+  # TODO
+
+} # exec_link
+
+exec_dir()
+{
+  local _src="$1"
+  local _dst="$2"
+  local _path="$3"
+  local _type="$4"
+  local _mode="${5:-$_def_dirmode}"
+  local _link="${6:-$_def_link}"
+
+  local _src_path="$_src/$_path"
+  local _dst_path="$_dst/$_path"
+
+  [[ "$_debug" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+
+  # delete mode
+  if [[ "$_mode" == "0000" ]]
+  then
+
+    # source
+    if [[ -e "$_src_path" ]]
+    then
+      rm -r "$_src_path"
+
+      # local only
+      if [[ "$_type" == "ldir" ]]
+      then
+        return
+      fi
+    fi
+
+    # destination
+    if [[ -e "$_dst_path" ]]
+    then
+      rm -r "$_dst_path"
+    fi
+
+    return
+  fi
+
+  # check source
+  if [[ ! -d "$_src_path" ]]
+  then
+
+    if [[ -e "$_src_path" ]]
+    then
+      echo "E: $_src_path exists and is not a directory!"
+      return
+    fi
+
+    mkdir -m "$_mode" "$_src_path"
+  fi
+
+  if [[ "$(stat_mode "$_src_path")" != "$_mode" ]]
+  then
+    change_mode "$_src_path" "$_mode"
+  fi
+
+  # not local
+  if [[ "$_type" != "ldir" ]]
+  then
+
+    # check destination
+    if [[ ! -d "$_dst_path" ]] && [[ "$_link" == "no" ]]
+    then
+
+      if [[ -e "$_dst_path" ]]
+      then
+        echo "W: $_dst_path exists!"
+      fi
+
+      mkdir -m "$_mode" "$_dst_path"
+    fi
+
+    if [[ "$_link" == "no" ]]
+    then
+      if [[ "$(stat_mode "$_dst_path")" != "$_mode" ]]
+      then
+        change_mode "$_dst_path" "$_mode"
+      fi
+    fi
+
+    # pass linking
+    exec_link "$_src" "$_dst" "$_path" "$_type" "$_mode" "$_link"
+  fi
+
+} # exec_dir
+
+exec_file()
+{
+  local _src="$1"
+  local _dst="$2"
+  local _path="$3"
+  local _type="$4"
+  local _mode="${5:-$_def_filemode}"
+  local _link="${6:-$_def_link}"
+
+  local _src_path="$_src/$_path"
+  local _dst_path="$_dst/$_path"
+
+  [[ "$_debug" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+
+  # delete mode
+  if [[ "$_mode" == "0000" ]]
+  then
+
+    # source
+    if [[ -e "$_src_path" ]]
+    then
+      rm "$_src_path"
+
+      # local only
+      if [[ "$_type" == "lfile" ]]
+      then
+        return
+      fi
+    fi
+
+    # destination
+    if [[ -e "$_dst_path" ]]
+    then
+      rm "$_dst_path"
+    fi
+
+    # done
+    return
+  fi
+
+  # check source
+  if [[ ! -e "$_src_path" ]]
+  then
+    echo "E: $_src_path not found!"
+    return
+  fi
+
+  if [[ "$(stat_mode "$_src_path")" != "$_mode" ]]
+  then
+    change_mode "$_src_path" "$_mode"
+  fi
+
+  # pass linking
+  if [[ "$_type" != "lfile" ]]
+  then
+    exec_link "$_src" "$_dst" "$_path" "$_type" "$_mode" "$_link"
+  fi
+
+} # exec_file
+
+exec_git()
+{
+  local _src="$1"
+  local _dst="$2"
+  local _path="$3"
+  local _type="$4"
+  local _gitpull="${5:-$_def_gitpull}"
+  local _gitdepth="${6:-$_def_gitdepth}"
+
+  local _src_path="$_src/$_path"
+  local _dst_path
+  _dst_path="$(dirname "$_dst/$_path")"
+
+  [[ "$_debug" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+
+  local _giturl _gitname _gitdir
+  while IFS=$' \t' read -r _giturl
+  do
+    # skip comments
+    [[ "$_giturl" =~ ^(#.*)?$ ]] && continue
+
+    _gitname="${_giturl##*/}"
+    _gitdir="${_gitname%*.git}"
+
+    echo " : git: $_dst_path/$_gitdir"
+
+    if [[ -d "$_dst_path/$_gitdir" ]]
+    then
+      if [[ "$_gitpull" == "yes" ]]
+      then
+        ( cd "$_dst_path/$_gitdir" && git pull -q )
+      fi
+    else
+      ( git clone -q --depth "$_gitdepth" "$_giturl" "$_dst_path/$_gitdir" )
+    fi
+
+  done < "$_src_path"
+
+} # exec_git
+
+read_dothier()
+{
+  local _hier _src _dst _path _type _mode _link _exec
+
+  _hier="$1"
+  _src="$(cd "$(dirname "$_hier")" && echo "$PWD")"
+  _dst="$2"
+
+  while IFS=$' \t' read -r _path _type _mode _link
+  do
+    # skip comments
+    [[ "$_path" =~ ^(#.*)?$ ]] && continue
+
+    # execute type
+    case "$_type" in
+      dir|ldir)
+        _exec="exec_dir"
+        ;;
+      file|lfile)
+        _exec="exec_file"
+        ;;
+      link|llink)
+        _exec="exec_link"
+        ;;
+      git|gitsrc)
+        _exec="exec_git"
+        ;;
+      *)
+        echo "E: unknown type $_type"
+        return
+        ;;
+    esac
+
+    if [[ "$(type -t "$_exec")" == "function" ]]
+    then
+      "$_exec" "$_src" "$_dst" "$_path" "$_type" "$_mode" "$_link"
+    else
+      echo "E: no such function $_exec"
+    fi
+
+  done < "$_hier"
+
+} # read_dothier
+
+check_support
+read_dothier "$_hier" "$_home"
+
+# vim: set ft=sh sw=2 ts=2 et :
+# eof
