@@ -1,0 +1,43 @@
+# generic
+*.bak
+*.core
+*.log
+*.old
+*.orig
+*.rej
+*.sw[p-z]
+*~
+.*.sw[p-z]
+
+# macos
+.DS_Store
+.VolumeIcon.icns
+
+# windows
+*.lnk
+[Dd]esktop.ini
+[Tt]humbs.db
+
+# c
+*.o
+*.so
+
+# python
+*.py[cod]
+__pycache__/
+
+# terraform
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+.terraform/modules/
+.terraform/providers/
+terraform.tfstate.d/
+
+# local
+#...
+
+# excludes
+!.git
+!.git_keep
+!.gitkeep
