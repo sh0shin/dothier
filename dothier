@@ -3,7 +3,7 @@
 
 # defaults
 _root="$HOME"
-_file=".hier"
+_file="$PWD/.hier"
 
 _def_dirmode="0755"
 _def_filemode="0644"
@@ -418,9 +418,12 @@ read_dothier()
 check_support
 
 # options
-while getopts ":hr:f:" opt
+while getopts ":hr:f:d" opt
 do
   case $opt in
+    d)
+      _debug="yes"
+      ;;
     h)
       show_help
       ;;
@@ -444,7 +447,6 @@ do
   esac
 done
 shift $((OPTIND -1))
-[[ $OPTIND -lt 2 ]] && show_help
 
 # main
 read_dothier "$_file" "$_root"
