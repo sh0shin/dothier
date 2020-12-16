@@ -83,7 +83,8 @@ exec_link()
   if [[ "$_type" == "dir" ]] || [[ "$_type" == "file" ]]
   then
 
-    if [[ "$_link" != "yes" ]] && [[ "$_link" != "no" ]]
+    if [[ "$_link" != "yes" ]] \
+      && [[ "$_link" != "no" ]]
     then
       _dst_path="$_dst/$_link"
     fi
@@ -92,7 +93,8 @@ exec_link()
   elif [[ "$_type" == "link" ]]
   then
 
-    if [[ "$_link" != "yes" ]] && [[ "$_link" != "no" ]]
+    if [[ "$_link" != "yes" ]] \
+      && [[ "$_link" != "no" ]]
     then
 
       # absolute link
@@ -118,19 +120,24 @@ exec_link()
   if [[ -e "$_dst_path" ]]
   then
     # remove dir
-    if [[ ! -L "$_dst_path" ]] && [[ -d "$_dst_path" ]] && [[ "$_type" != "dir" ]]
+    if [[ ! -L "$_dst_path" ]] \
+      && [[ -d "$_dst_path" ]] \
+      && [[ "$_type" != "dir" ]]
     then
       rm -r "$_dst_path"
     fi
 
     # remove file
-    if [[ ! -L "$_dst_path" ]] && [[ -f "$_dst_path" ]] && [[ "$_type" != "file" ]]
+    if [[ ! -L "$_dst_path" ]] \
+      && [[ -f "$_dst_path" ]] \
+      && [[ "$_type" != "file" ]]
     then
       rm "$_dst_path"
     fi
 
     # wrong link
-    if [[ "$(readlink "$_dst_path")" != "$_src_path" ]] && [[ "$_link" != "no" ]]
+    if [[ "$(readlink "$_dst_path")" != "$_src_path" ]] \
+      && [[ "$_link" != "no" ]]
     then
 
       # remove dir
@@ -145,7 +152,8 @@ exec_link()
     fi
 
     # remove no link
-    if [[ -L "$_dst_path" ]] && [[ "$_link" == "no" ]]
+    if [[ -L "$_dst_path" ]] \
+      && [[ "$_link" == "no" ]]
     then
       rm "$_dst_path"
       return
@@ -234,7 +242,8 @@ exec_dir()
   then
 
     # check destination
-    if [[ ! -d "$_dst_path" ]] && [[ "$_link" == "no" ]]
+    if [[ ! -d "$_dst_path" ]] \
+      && [[ "$_link" == "no" ]]
     then
 
       if [[ -e "$_dst_path" ]]
