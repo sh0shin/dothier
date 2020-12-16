@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
 #
 
-# commandline
-_home="${1:-$HOME}"
-_hier="${2:-.hier}"
-
-# debug
-_debug="no"
-
 # defaults
+_root="$HOME"
+_file=".hier"
+
 _def_dirmode="0755"
 _def_filemode="0644"
 _def_link="no"
 _def_gitpull="no"
 _def_gitdepth="1"
+
+# debug
+_debug="no"
 
 check_support()
 {
@@ -27,6 +26,12 @@ check_support()
       ;;
   esac
 } # check_support
+
+show_help()
+{
+  echo "Usage: $(basename "$0") -f <hier-file> [-r <home-root>]"
+  exit 1
+}
 
 stat_mode()
 {
@@ -394,8 +399,40 @@ read_dothier()
   done < "$_hier"
 } # read_dothier
 
+# supported
 check_support
-read_dothier "$_hier" "$_home"
+
+# options
+while getopts ":hr:f:" opt
+do
+  case $opt in
+    h)
+      show_help
+      ;;
+    r)
+      _root="$OPTARG"
+      ;;
+    f)
+      _file="$OPTARG"
+      ;;
+    \?)
+      echo "-$OPTARG is invalid!"
+      show_help
+      ;;
+    :)
+      echo "-$OPTARG requires an argument!"
+      show_help
+      ;;
+    *)
+      show_help
+      ;;
+  esac
+done
+shift $((OPTIND -1))
+[[ $OPTIND -lt 2 ]] && show_help
+
+# main
+read_dothier "$_file" "$_root"
 
 # vim: set ft=sh sw=2 ts=2 et :
 # eof
