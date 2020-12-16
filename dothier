@@ -32,11 +32,21 @@ check_support()
   esac
 } # check_support
 
-show_help()
+show_usage()
 {
   echo "$_dothier $_dotversion ( $_doturl )"
-  echo "Usage: $(basename "$0") -f <hier-file> [-r <home-root>]"
-  exit 1
+  echo "Usage: $(basename "$0") [-dh] [-f file] [-r root]"
+}
+
+show_help()
+{
+  show_usage
+  echo "Options:"
+  echo "  -d      : Enable debug output"
+  echo "  -h      : Show this help"
+  echo "  -f file : The .hier file to use (default $_file)"
+  echo "  -r root : Home root directory (default $_root)"
+  echo
 }
 
 stat_mode()
@@ -418,7 +428,7 @@ read_dothier()
 check_support
 
 # options
-while getopts ":hr:f:d" opt
+while getopts ":dhr:f:" opt
 do
   case $opt in
     d)
@@ -426,6 +436,7 @@ do
       ;;
     h)
       show_help
+      exit 1
       ;;
     r)
       _root="$OPTARG"
@@ -435,14 +446,17 @@ do
       ;;
     \?)
       echo "-$OPTARG is invalid!"
-      show_help
+      show_usage
+      exit 1
       ;;
     :)
       echo "-$OPTARG requires an argument!"
-      show_help
+      show_usage
+      exit 1
       ;;
     *)
-      show_help
+      show_usage
+      exit 1
       ;;
   esac
 done
