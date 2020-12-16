@@ -14,6 +14,11 @@ _def_gitdepth="1"
 # debug
 _debug="no"
 
+# version
+_dothier="$(basename "$0")"
+_dotversion="0.0.1"
+_doturl="https://github.com/sh0shin/dothier"
+
 check_support()
 {
   case "$OSTYPE" in
@@ -29,6 +34,7 @@ check_support()
 
 show_help()
 {
+  echo "$_dothier $_dotversion ( $_doturl )"
   echo "Usage: $(basename "$0") -f <hier-file> [-r <home-root>]"
   exit 1
 }
