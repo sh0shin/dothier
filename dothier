@@ -389,6 +389,12 @@ read_dothier()
   _src="$(cd "$(dirname "$_hier")" && echo "$PWD")"
   _dst="$2"
 
+  if [[ ! -e "$_hier" ]]
+  then
+    echo "E: file $_hier not found!"
+    return
+  fi
+
   while IFS=$' \t' read -r _path _type _mode _link
   do
     # skip comments
