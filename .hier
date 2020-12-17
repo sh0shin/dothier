@@ -5,6 +5,7 @@
 
 # local
 .                                                   ldir  0750
+.editorconfig                                       lfile 0640
 .gitignore                                          lfile 0640
 LICENSE                                             lfile 0640
 README.md                                           lfile 0640
