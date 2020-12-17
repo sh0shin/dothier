@@ -16,7 +16,7 @@ _debug="no"
 
 # version
 _dothier="$(basename "$0")"
-_dotversion="0.0.1"
+_dotversion="0.0.2"
 _doturl="https://github.com/sh0shin/dothier"
 
 check_support()
