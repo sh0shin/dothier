@@ -392,6 +392,7 @@ read_dothier()
   if [[ ! -e "$_hier" ]]
   then
     echo "E: file $_hier not found!"
+    show_help
     return
   fi
 
