@@ -36,7 +36,7 @@ show_usage()
 {
   echo "$_dothier $_dotversion ( $_doturl )"
   echo "Usage: $(basename "$0") [-dh] [-f file] [-r root]"
-}
+} # show_usage
 
 show_help()
 {
@@ -47,7 +47,7 @@ show_help()
   echo "  -f file : The .hier file to use (default $_file)"
   echo "  -r root : Home root directory (default $_root)"
   echo
-}
+} # show_help
 
 stat_mode()
 {
