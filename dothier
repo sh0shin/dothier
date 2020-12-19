@@ -23,7 +23,7 @@ _gitpull="no"
 
 # version
 _dotself="$(basename "$0")"
-_dotversion="0.0.4"
+_dotversion="0.0.5"
 _doturl="https://github.com/sh0shin/dothier"
 
 check_support()
@@ -363,7 +363,13 @@ exec_git()
 
   local _src_path="$_src/$_path"
   local _dst_path
-  _dst_path="$(dirname "$_dst/$_path")"
+
+  if [[ "$_type" == "lgit" ]]
+  then
+    _dst_path="$(dirname "$_src/$_path")"
+  else
+    _dst_path="$(dirname "$_dst/$_path")"
+  fi
 
   [[ "$_debug" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
 
@@ -431,7 +437,7 @@ read_dothier()
       link|llink)
         _exec="exec_link"
         ;;
-      git|gitsrc)
+      git|lgit)
         _exec="exec_git"
         ;;
       *)
