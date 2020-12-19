@@ -18,6 +18,9 @@ _debug="no"
 # recursive
 _recursive="no"
 
+# git pull
+_gitpull="no"
+
 # version
 _dotself="$(basename "$0")"
 _dotversion="0.0.3"
@@ -49,6 +52,7 @@ show_help()
   echo "  -D      : Enable debug output"
   echo "  -h      : Show this help"
   echo "  -r      : Enabled recursive mode (default $_recursive)"
+  echo "  -g      : Enable git pull (default $_gitpull)"
   echo "  -f file : The .hier file to use (default $_dothier)"
   echo "  -d dir  : Use directory for recursive mode (default: $_dotdir)"
   echo "  -H home : Home directory (default $_dothome)"
@@ -402,6 +406,15 @@ read_dothier()
     return
   fi
 
+  # git pull
+  if [[ "$_gitpull" == "yes" ]]
+  then
+    if [[ -d "$_src/.git" ]]
+    then
+      ( cd "$_src" && git pull )
+    fi
+  fi
+
   while IFS=$' \t' read -r _path _type _mode _link
   do
     # skip comments
@@ -458,7 +471,7 @@ dothier_recursive()
 check_support
 
 # options
-while getopts ":Dhrf:d:H:" opt
+while getopts ":Dhrgf:d:H:" opt
 do
   case $opt in
     D)
@@ -470,6 +483,9 @@ do
       ;;
     r)
       _recursive="yes"
+      ;;
+    g)
+      _gitpull="yes"
       ;;
     f)
       _dothier="$OPTARG"
