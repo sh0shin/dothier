@@ -1,0 +1,24 @@
+# dothier
+
+# l(local) dir                type  mode
+.                             ldir  0700
+
+# l(ocal) file                type  mode
+.editorconfig                 lfile 0640
+.gitignore                    lfile 0640
+LICENSE                       lfile 0640
+README.md                     lfile 0640
+dothier                       lfile 0750
+
+# link                        type  mode  source
+.bash_profile                 link  0640  .profile
+.bashrc                       link  0640  .profile
+
+# file                        type  mode  link
+.profile                      file  0640  yes
+
+# dir                         type  mode  link
+.ssh                          dir   0700
+
+# git sources                 type  pull  depth
+.git_src                      git   yes   1
