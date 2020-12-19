@@ -2,8 +2,9 @@
 #
 
 # defaults
-_root="$HOME"
-_file="$PWD/.hier"
+_dothome="$HOME"
+_dothier=".hier"
+_dotdir="$HOME/.dotfiles"
 
 _def_dirmode="0755"
 _def_filemode="0644"
@@ -14,9 +15,12 @@ _def_gitdepth="1"
 # debug
 _debug="no"
 
+# recursive
+_recursive="no"
+
 # version
-_dothier="$(basename "$0")"
-_dotversion="0.0.2"
+_dotself="$(basename "$0")"
+_dotversion="0.0.3"
 _doturl="https://github.com/sh0shin/dothier"
 
 check_support()
@@ -34,18 +38,20 @@ check_support()
 
 show_usage()
 {
-  echo "$_dothier $_dotversion ( $_doturl )"
-  echo "Usage: $(basename "$0") [-dh] [-f file] [-r root]"
+  echo "$_dotself $_dotversion ( $_doturl )"
+  echo "Usage: $_dotself [-Dhr] [-f file] [-d dir] [-H home]"
 } # show_usage
 
 show_help()
 {
   show_usage
   echo "Options:"
-  echo "  -d      : Enable debug output"
+  echo "  -D      : Enable debug output"
   echo "  -h      : Show this help"
-  echo "  -f file : The .hier file to use (default $_file)"
-  echo "  -r root : Home root directory (default $_root)"
+  echo "  -r      : Enabled recursive mode (default $_recursive)"
+  echo "  -f file : The .hier file to use (default $_dothier)"
+  echo "  -d dir  : Use directory for recursive mode (default: $_dotdir)"
+  echo "  -H home : Home directory (default $_dothome)"
   echo
 } # show_help
 
@@ -431,14 +437,31 @@ read_dothier()
   done < "$_hier"
 } # read_dothier
 
+dothier_recursive()
+{
+  local _hier _hier_path _hier_name _dst _src
+
+  _hier="$1"
+  _dst="$2"
+  _src="$3"
+  _hier_path="$(find "$_src" -iname "$_hier" | sort -u)"
+
+  for _path in $_hier_path
+  do
+    _hier_name="$(basename "$(dirname "$_path")")"
+    echo ": $_hier_name"
+    read_dothier "$_path" "$_dst"
+  done
+} # dothier_recursive
+
 # supported
 check_support
 
 # options
-while getopts ":dhr:f:" opt
+while getopts ":Dhrf:d:H:" opt
 do
   case $opt in
-    d)
+    D)
       _debug="yes"
       ;;
     h)
@@ -446,10 +469,16 @@ do
       exit 1
       ;;
     r)
-      _root="$OPTARG"
+      _recursive="yes"
       ;;
     f)
-      _file="$OPTARG"
+      _dothier="$OPTARG"
+      ;;
+    d)
+      _dotdir="$OPTARG"
+      ;;
+    H)
+      _dothome="$OPTARG"
       ;;
     \?)
       echo "-$OPTARG is invalid!"
@@ -470,7 +499,12 @@ done
 shift $((OPTIND -1))
 
 # main
-read_dothier "$_file" "$_root"
+if [[ "$_recursive" == "yes" ]]
+then
+  dothier_recursive "$_dothier" "$_dothome" "$_dotdir"
+else
+  read_dothier "$_dothier" "$_dothome"
+fi
 
 # vim: set ft=sh sw=2 ts=2 et :
 # eof
