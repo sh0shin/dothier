@@ -23,7 +23,7 @@ _gitpull="no"
 
 # version
 _dotself="$(basename "$0")"
-_dotversion="0.0.5"
+_dotversion="0.0.6"
 _doturl="https://github.com/sh0shin/dothier"
 
 check_support()
@@ -143,7 +143,7 @@ exec_link()
   fi
 
   # check destination
-  if [[ -e "$_dst_path" ]]
+  if [[ -e "$_dst_path" ]] || [[ ! -e "$_dst_path" ]]
   then
     # remove dir
     if [[ ! -L "$_dst_path" ]] \
