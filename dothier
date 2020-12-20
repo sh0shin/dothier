@@ -143,47 +143,44 @@ exec_link()
   fi
 
   # check destination
-  if [[ -e "$_dst_path" ]] || [[ ! -e "$_dst_path" ]]
+  # remove dir
+  if [[ ! -L "$_dst_path" ]] \
+    && [[ -d "$_dst_path" ]] \
+    && [[ "$_type" != "dir" ]]
   then
+    rm -r "$_dst_path"
+  fi
+
+  # remove file
+  if [[ ! -L "$_dst_path" ]] \
+    && [[ -f "$_dst_path" ]] \
+    && [[ "$_type" != "file" ]]
+  then
+    rm "$_dst_path"
+  fi
+
+  # wrong link
+  if [[ "$(readlink "$_dst_path")" != "$_src_path" ]] \
+    && [[ "$_link" != "no" ]]
+  then
+
     # remove dir
-    if [[ ! -L "$_dst_path" ]] \
-      && [[ -d "$_dst_path" ]] \
-      && [[ "$_type" != "dir" ]]
+    if [[ -d "$_dst_path" ]]
     then
       rm -r "$_dst_path"
-    fi
 
     # remove file
-    if [[ ! -L "$_dst_path" ]] \
-      && [[ -f "$_dst_path" ]] \
-      && [[ "$_type" != "file" ]]
-    then
-      rm "$_dst_path"
+    else
+      rm -f "$_dst_path"
     fi
+  fi
 
-    # wrong link
-    if [[ "$(readlink "$_dst_path")" != "$_src_path" ]] \
-      && [[ "$_link" != "no" ]]
-    then
-
-      # remove dir
-      if [[ -d "$_dst_path" ]]
-      then
-        rm -r "$_dst_path"
-
-      # remove file
-      else
-        rm "$_dst_path"
-      fi
-    fi
-
-    # remove no link
-    if [[ -L "$_dst_path" ]] \
-      && [[ "$_link" == "no" ]]
-    then
-      rm "$_dst_path"
-      return
-    fi
+  # remove no link
+  if [[ -L "$_dst_path" ]] \
+    && [[ "$_link" == "no" ]]
+  then
+    rm "$_dst_path"
+    return
   fi
 
   # delete mode
