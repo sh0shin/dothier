@@ -22,9 +22,9 @@ _recursive="no"
 _gitpull="no"
 
 # version
-_dotself="$(basename "$0")"
-_dotversion="v0.0.8-beta"
-_doturl="https://github.com/sh0shin/dothier"
+readonly _dotself="$(basename "$0")"
+readonly _dotversion="v0.0.8-beta"
+readonly _doturl="https://github.com/sh0shin/dothier"
 
 check_support()
 {
