@@ -23,7 +23,7 @@ _gitpull="no"
 
 # version
 _dotself="$(basename "$0")"
-_dotversion="v0.0.8b"
+_dotversion="v0.0.8-beta"
 _doturl="https://github.com/sh0shin/dothier"
 
 check_support()
