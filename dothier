@@ -23,7 +23,7 @@ _gitpull="no"
 
 # version
 _dotself="$(basename "$0")"
-_dotversion="v0.0.7"
+_dotversion="v0.0.8b"
 _doturl="https://github.com/sh0shin/dothier"
 
 check_support()
@@ -479,6 +479,7 @@ do
   case $opt in
     D)
       _debug="yes"
+      set -x
       ;;
     h)
       show_help
@@ -515,7 +516,13 @@ do
       ;;
   esac
 done
-shift $((OPTIND -1))
+
+if [[ "$OPTIND" -eq 1 ]] || [[ "$OPTIND" -lt "$#" ]]
+then
+  show_usage
+  exit 1
+fi
+#shift $((OPTIND -1))
 
 # main
 if [[ "$_recursive" == "yes" ]]
@@ -524,6 +531,3 @@ then
 else
   read_dothier "$_dothier" "$_dothome"
 fi
-
-# vim: set ft=sh sw=2 ts=2 et :
-# eof
