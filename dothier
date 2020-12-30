@@ -392,7 +392,7 @@ dotexec_git()
       gitdst="$dst_path/$gitdir"
     fi
 
-    echo " : git: $giturl -> $gitdst"
+    echo " : git: $gitdst ($giturl)"
 
     if [[ -d "$gitdst" ]]
     then
