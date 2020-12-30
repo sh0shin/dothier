@@ -91,7 +91,7 @@ change_mode()
     esac
 } # change_mode
 
-exec_link()
+dotexec_link()
 {
   local src="$1"
   local dst="$2"
@@ -203,7 +203,7 @@ exec_link()
   fi
 } # exec_link
 
-exec_dir()
+dotexec_dir()
 {
   local src="$1"
   local dst="$2"
@@ -290,7 +290,7 @@ exec_dir()
   fi
 } # exec_dir
 
-exec_file()
+dotexec_file()
 {
   local src="$1"
   local dst="$2"
@@ -349,7 +349,7 @@ exec_file()
   fi
 } # exec_file
 
-exec_git()
+dotexec_git()
 {
   local src="$1"
   local dst="$2"
@@ -409,7 +409,7 @@ exec_git()
 
 read_dothier()
 {
-  local hier src dst path type mode link exec
+  local hier src dst path type mode link dotexec
 
   hier="$1"
   src="$(cd "$(dirname "$hier")" && echo "$PWD")"
@@ -439,16 +439,16 @@ read_dothier()
     # execute type
     case "$type" in
       dir|ldir)
-        exec="exec_dir"
+        dotexec="dotexec_dir"
         ;;
       file|lfile)
-        exec="exec_file"
+        dotexec="dotexec_file"
         ;;
       link|llink)
-        exec="exec_link"
+        dotexec="dotexec_link"
         ;;
       git|lgit)
-        exec="exec_git"
+        dotexec="dotexec_git"
         ;;
       *)
         echo "E: unknown type $type"
@@ -456,11 +456,11 @@ read_dothier()
         ;;
     esac
 
-    if [[ "$(type -t "$exec")" == "function" ]]
+    if [[ "$(type -t "$dotexec")" == "function" ]]
     then
-      "$exec" "$src" "$dst" "$path" "$type" "$mode" "$link"
+      "$dotexec" "$src" "$dst" "$path" "$type" "$mode" "$link"
     else
-      echo "E: no such function $exec"
+      echo "E: no such function $dotexec"
     fi
 
   done < "$hier"
