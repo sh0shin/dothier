@@ -360,6 +360,7 @@ exec_git()
 
   local _src_path="$_src/$_path"
   local _dst_path
+  local _dst_dir
 
   if [[ "$_type" == "lgit" ]]
   then
@@ -371,7 +372,7 @@ exec_git()
   [[ "$_debug" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
 
   local _giturl _gitname _gitdir
-  while IFS=$' \t' read -r _giturl
+  while IFS=$' \t' read -r _giturl _gitdst
   do
     # skip comments
     [[ "$_giturl" =~ ^(#.*)?$ ]] && continue
@@ -379,16 +380,32 @@ exec_git()
     _gitname="${_giturl##*/}"
     _gitdir="${_gitname%*.git}"
 
-    echo " : git: $_dst_path/$_gitdir"
 
-    if [[ -d "$_dst_path/$_gitdir" ]]
+    if [[ -n "$_gitdst" ]]
+    then
+      # absolute path
+      if [[ "$_gitdir" =~ ^(/.*)?$ ]]
+      then
+        _gitdst="$_gitdst"
+      else
+        _gitdst="$_dst_path/$_gitdst"
+      fi
+    else
+      _gitdst="$_dst_path/$_gitdir"
+    fi
+
+    echo " : git: $_giturl -> $_gitdst"
+
+    if [[ -d "$_gitdst" ]]
     then
       if [[ "$_gitpull" == "yes" ]]
       then
-        ( cd "$_dst_path/$_gitdir" && git pull -q )
+        echo "Pull $_gitdst"
+        #( cd "$_dst_path/$_gitdir" && git pull -q )
       fi
     else
-      ( git clone -q --depth "$_gitdepth" "$_giturl" "$_dst_path/$_gitdir" )
+      echo "Clone $_gitdst"
+      #( git clone -q --depth "$_gitdepth" "$_giturl" "$_dst_path/$_gitdir" )
     fi
 
   done < "$_src_path"
