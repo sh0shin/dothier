@@ -360,7 +360,6 @@ exec_git()
 
   local _src_path="$_src/$_path"
   local _dst_path
-  local _dst_dir
 
   if [[ "$_type" == "lgit" ]]
   then
@@ -379,7 +378,6 @@ exec_git()
 
     _gitname="${_giturl##*/}"
     _gitdir="${_gitname%*.git}"
-
 
     if [[ -n "$_gitdst" ]]
     then
@@ -400,12 +398,10 @@ exec_git()
     then
       if [[ "$_gitpull" == "yes" ]]
       then
-        echo "Pull $_gitdst"
-        #( cd "$_dst_path/$_gitdir" && git pull -q )
+        ( cd "$_gitdst" && git pull -q )
       fi
     else
-      echo "Clone $_gitdst"
-      #( git clone -q --depth "$_gitdepth" "$_giturl" "$_dst_path/$_gitdir" )
+      ( git clone -q --depth "$_gitdepth" "$_giturl" "$_gitdst" )
     fi
 
   done < "$_src_path"
