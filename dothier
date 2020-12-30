@@ -201,7 +201,7 @@ dotexec_link()
       ln -s "$src_path" "$dst_path"
     fi
   fi
-} # exec_link
+} # dotexec_link
 
 dotexec_dir()
 {
@@ -286,9 +286,9 @@ dotexec_dir()
     fi
 
     # pass linking
-    exec_link "$src" "$dst" "$path" "$type" "$mode" "$link"
+    dotexec_link "$src" "$dst" "$path" "$type" "$mode" "$link"
   fi
-} # exec_dir
+} # dotexec_dir
 
 dotexec_file()
 {
@@ -345,9 +345,9 @@ dotexec_file()
   # pass linking
   if [[ "$type" != "lfile" ]]
   then
-    exec_link "$src" "$dst" "$path" "$type" "$mode" "$link"
+    dotexec_link "$src" "$dst" "$path" "$type" "$mode" "$link"
   fi
-} # exec_file
+} # dotexec_file
 
 dotexec_git()
 {
@@ -405,7 +405,7 @@ dotexec_git()
     fi
 
   done < "$src_path"
-} # exec_git
+} # dotexec_git
 
 read_dothier()
 {
