@@ -62,7 +62,7 @@ show_help()
 
 stat_mode()
 {
-  local path
+  local path stat
   path="${1:-/dev/null}"
 
   case "$OSTYPE" in
@@ -87,6 +87,7 @@ change_mode()
       chmod -h "$mode" "$path"
       ;;
     linux*)
+      # FIXME
       [[ ! -L "$path" ]] && echo chmod "$mode" "$path"
       ;;
     esac
