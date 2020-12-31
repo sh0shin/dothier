@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 
-# defaults
+# default options
 # -D
 dothier_debug="no"
 # -r
@@ -15,16 +15,16 @@ dothier_dir="$HOME/.dotfiles"
 # -H home
 dothier_home="$HOME"
 
+# self, version, url
+readonly dothier_self="$(basename "$0")"
+readonly dothier_version="v0.1.0-beta"
+readonly dothier_url="https://sh0shin.org/dothier"
+
 def_dirmode="0755"
 def_filemode="0644"
 def_link="no"
 def_gitpull="no"
 def_gitdepth="1"
-
-# version
-readonly dothier_self="$(basename "$0")"
-readonly dothier_version="v0.1.0-beta"
-readonly dothier_url="https://sh0shin.org/dothier"
 
 check_support()
 {
@@ -91,7 +91,7 @@ change_mode()
     esac
 } # change_mode
 
-dotexec_link()
+exec_link()
 {
   local src="$1"
   local dst="$2"
@@ -203,7 +203,7 @@ dotexec_link()
   fi
 } # dotexec_link
 
-dotexec_dir()
+exec_dir()
 {
   local src="$1"
   local dst="$2"
@@ -290,7 +290,7 @@ dotexec_dir()
   fi
 } # dotexec_dir
 
-dotexec_file()
+exec_file()
 {
   local src="$1"
   local dst="$2"
@@ -349,7 +349,7 @@ dotexec_file()
   fi
 } # dotexec_file
 
-dotexec_git()
+exec_git()
 {
   local src="$1"
   local dst="$2"
@@ -409,7 +409,8 @@ dotexec_git()
 
 read_dothier()
 {
-  local hier src dst path type mode link dotexec
+  local hier src dst path type mode link
+  local dothier_exec
 
   hier="$1"
   src="$(cd "$(dirname "$hier")" && echo "$PWD")"
@@ -422,7 +423,7 @@ read_dothier()
     return
   fi
 
-  # git pull
+  # git pull (-g)
   if [[ "$dothier_gitpull" == "yes" ]]
   then
     if [[ -d "$src/.git" ]]
@@ -439,16 +440,16 @@ read_dothier()
     # execute type
     case "$type" in
       dir|ldir)
-        dotexec="dotexec_dir"
+        dothier_exec="exec_dir"
         ;;
       file|lfile)
-        dotexec="dotexec_file"
+        dothier_exec="exec_file"
         ;;
       link|llink)
-        dotexec="dotexec_link"
+        dothier_exec="exec_link"
         ;;
       git|lgit)
-        dotexec="dotexec_git"
+        dothier_exec="exec_git"
         ;;
       *)
         echo "E: unknown type $type"
@@ -456,11 +457,11 @@ read_dothier()
         ;;
     esac
 
-    if [[ "$(type -t "$dotexec")" == "function" ]]
+    if [[ "$(type -t "$dothier_exec")" == "function" ]]
     then
-      "$dotexec" "$src" "$dst" "$path" "$type" "$mode" "$link"
+      "$dothier_exec" "$src" "$dst" "$path" "$type" "$mode" "$link"
     else
-      echo "E: no such function $dotexec"
+      echo "E: no such function $dothier_exec"
     fi
 
   done < "$hier"
