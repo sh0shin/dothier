@@ -6,6 +6,8 @@
 dothier_debug="no"
 # -r
 dothier_recursive="no"
+# -g
+dothier_gitpull="no"
 # -f file
 dothier_file=".hier"
 # -d dir
@@ -18,9 +20,6 @@ def_filemode="0644"
 def_link="no"
 def_gitpull="no"
 def_gitdepth="1"
-
-# git pull
-gitpull="no"
 
 # version
 readonly dothier_self="$(basename "$0")"
@@ -53,7 +52,7 @@ show_help()
   echo "  -D      : Enable debug output"
   echo "  -h      : Show this help"
   echo "  -r      : Enabled recursive mode (default: $dothier_recursive)"
-  echo "  -g      : Enable git pull (default: $gitpull)"
+  echo "  -g      : Enable git pull (default: $dothier_gitpull)"
   echo "  -f file : The .hier file to use (default: $dothier_file)"
   echo "  -d dir  : Use directory for recursive mode (default: $dothier_dir)"
   echo "  -H home : Home directory (default: $dothier_home)"
@@ -424,7 +423,7 @@ read_dothier()
   fi
 
   # git pull
-  if [[ "$gitpull" == "yes" ]]
+  if [[ "$dothier_gitpull" == "yes" ]]
   then
     if [[ -d "$src/.git" ]]
     then
@@ -503,7 +502,7 @@ do
       dothier_recursive="yes"
       ;;
     g)
-      gitpull="yes"
+      dothier_gitpull="yes"
       ;;
     f)
       dothier_file="$OPTARG"
