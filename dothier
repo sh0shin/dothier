@@ -3,7 +3,7 @@
 
 # self, version, url
 readonly dothier_self="$(basename "$0")"
-readonly dothier_version="v0.1.0-beta.2"
+readonly dothier_version="v0.1.0-beta.3"
 readonly dothier_url="https://sh0shin.org/dothier"
 
 # default options
@@ -122,7 +122,7 @@ exec_link()
     if [[ "$link" != "yes" ]] \
       && [[ "$link" != "no" ]]
     then
-      dst_path="$dst/$link"
+      dst_path="$dothier_home/$link"
     fi
 
   # link
@@ -140,7 +140,7 @@ exec_link()
 
       # relative link
       else
-        src_path="$src/$link"
+        src_path="$dothier_root/$link"
       fi
     fi
   fi
