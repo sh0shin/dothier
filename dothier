@@ -210,14 +210,11 @@ exec_link()
   fi
 } # dotexec_link
 
-# exec_dir <dothier_workdir> <dothier_home> [dothier_file_content]
+# exec_dir <dothier_workdir> <dothier_home> <dothier_content>
 exec_dir()
 {
-  echo "$@"
   local dothier_workdir # was src
   local dothier_home # was dst
-  # dothier file content
-  local dothier_content
 
   local dothier_path # was path
   local dothier_type # was type
@@ -226,11 +223,13 @@ exec_dir()
 
   dothier_workdir="${1:-.}"
   dothier_home="${2:-$HOME}"
+  shift
+  shift
+  dothier_content=("$@")
 
-  dothier_content=("$3")
-
-
-  echo "${dothier_content[*]}"
+  echo "exec_dir"
+  echo "${dothier_content[1]}"
+  echo "exec_dir"
   return
 
   local src="$1"
@@ -448,7 +447,6 @@ read_dothier()
   local dothier_file
   local dothier_home
   local dothier_workdir
-  local dothier_content
   local dothier_exec
 
   dothier_file="$1"
@@ -481,28 +479,30 @@ read_dothier()
       continue
     fi
 
-    # content
-    declare -A dothier_content
-    dothier_content[path]="$dothier_path"
-    dothier_content[type]="$dothier_type"
-    dothier_content[mode]="$dothier_mode"
-    dothier_content[link]="$dothier_link"
+    # default link
+    link="${link:-$dothier_file_link}"
 
     # execute type
     case "$type" in
       dir|ldir)
         dothier_exec="exec_dir"
+        # default dirmode
+        mode="${mode:-$dothier_file_dirmode}"
         ;;
       file|lfile)
         dothier_exec="exec_file"
+        # default filemode
+        mode="${mode:-$dothier_file_filemode}"
         ;;
       link|llink)
         dothier_exec="exec_link"
         ;;
       git|lgit)
         dothier_exec="exec_git"
-        dothier_content[gitpull]="$mode"
-        dothier_content[gitdepth]="$link"
+        # default gitpull
+        mode="${mode:-$dothier_file_gitpull}"
+        # default gitdepth
+        link="${link:-$dothier_file_gitdepth}"
         ;;
       *)
         echo "E: unknown type $dothier_type"
@@ -512,7 +512,8 @@ read_dothier()
 
     if [[ "$(type -t "$dothier_exec")" == "function" ]]
     then
-      "$dothier_exec" "$dothier_workdir" "$dothier_home" "${dothier_content[@]}"
+      "$dothier_exec" "$dothier_workdir" "$dothier_home" \
+        "$path" "$type" "$mode" "$link"
     else
       echo "E: no such function $dothier_exec"
     fi
