@@ -409,7 +409,12 @@ exec_git()
       gitdst="$dst_path/$gitdir"
     fi
 
-    echo " : git: $gitdst ($giturl)"
+    if [[ "$dothier_verbose" == "yes" ]]
+    then
+      echo " : git: $gitdst ($giturl)"
+    else
+      echo " : git: $gitdst"
+    fi
 
     if [[ -d "$gitdst" ]]
     then
