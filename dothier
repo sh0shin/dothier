@@ -4,7 +4,8 @@
 # defaults
 dothome="$HOME"
 dothier=".hier"
-dotdir="$HOME/.dotfiles"
+
+dotfiles_dir="$HOME/.dotfiles"
 
 def_dirmode="0755"
 def_filemode="0644"
@@ -42,20 +43,20 @@ check_support()
 show_usage()
 {
   echo "$dotself $dotversion ( $doturl )"
-  echo "Usage: $dotself [-Dhr] [-f file] [-d dir] [-H home]"
+  echo "Usage: $dotself [-Dhr] [-f file] [-d dotfiles dir] [-H home]"
 } # show_usage
 
 show_help()
 {
   show_usage
   echo "Options:"
-  echo "  -D      : Enable debug output"
-  echo "  -h      : Show this help"
-  echo "  -r      : Enabled recursive mode (default $recursive)"
-  echo "  -g      : Enable git pull (default $gitpull)"
-  echo "  -f file : The .hier file to use (default $dothier)"
-  echo "  -d dir  : Use directory for recursive mode (default: $dotdir)"
-  echo "  -H home : Home directory (default $dothome)"
+  echo "  -D              : Enable debug output"
+  echo "  -h              : Show this help"
+  echo "  -r              : Enabled recursive mode (default $recursive)"
+  echo "  -g              : Enable git pull (default $gitpull)"
+  echo "  -f file         : The .hier file to use (default $dothier)"
+  echo "  -d dotfiles dir : Use directory for recursive mode (default: $dotfiles_dir)"
+  echo "  -H home         : Home directory (default $dothome)"
   echo
 } # show_help
 
@@ -508,7 +509,7 @@ do
       dothier="$OPTARG"
       ;;
     d)
-      dotdir="$OPTARG"
+      dotfiles_dir="$OPTARG"
       ;;
     H)
       dothome="$OPTARG"
@@ -540,7 +541,7 @@ fi
 # main
 if [[ "$recursive" == "yes" ]]
 then
-  dothier_recursive "$dothier" "$dothome" "$dotdir"
+  dothier_recursive "$dothier" "$dothome" "$dotfiles_dir"
 else
   read_dothier "$dothier" "$dothome"
 fi
