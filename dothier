@@ -23,9 +23,9 @@ recursive="no"
 gitpull="no"
 
 # version
-readonly dotself="$(basename "$0")"
-readonly dotversion="v0.1.0-beta"
-readonly doturl="https://sh0shin.org/dothier"
+readonly dothier_self="$(basename "$0")"
+readonly dothier_version="v0.1.0-beta"
+readonly dothier_url="https://sh0shin.org/dothier"
 
 check_support()
 {
@@ -42,8 +42,8 @@ check_support()
 
 show_usage()
 {
-  echo "$dotself $dotversion ( $doturl )"
-  echo "Usage: $dotself [-Dhr] [-f file] [-d dotfiles dir] [-H home]"
+  echo "$dothier_self $dothier_version ( $dothier_url )"
+  echo "Usage: $dothier_self [-Dhr] [-f file] [-d dotfiles dir] [-H home]"
 } # show_usage
 
 show_help()
