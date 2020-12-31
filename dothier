@@ -9,10 +9,12 @@ readonly dothier_url="https://sh0shin.org/dothier"
 # default options
 # -D
 dothier_debug="no"
-# -r
-dothier_recursive="no"
 # -g
 dothier_gitpull="no"
+# -r
+dothier_recursive="no"
+# -v
+dothier_verbose="no"
 # -f file
 dothier_file=".hier"
 # -d dir
@@ -43,17 +45,18 @@ check_support()
 show_usage()
 {
   echo "$dothier_self $dothier_version ( $dothier_url )"
-  echo "Usage: $dothier_self [-Dhr] [-f file] [-d dir] [-H home]"
+  echo "Usage: $dothier_self [-Dhrv] [-f file] [-d dir] [-H home]"
 } # show_usage
 
 show_help()
 {
   show_usage
   echo "Options:"
-  echo "  -D      : Enable debug output"
+  echo "  -D      : Enable verbose debug output"
+  echo "  -g      : Enable git pull (default: $dothier_gitpull)"
   echo "  -h      : Show this help"
   echo "  -r      : Enabled recursive mode (default: $dothier_recursive)"
-  echo "  -g      : Enable git pull (default: $dothier_gitpull)"
+  echo "  -v      : Verbose output (default: $dothier_verbose)"
   echo "  -f file : The .hier file to use (default: $dothier_file)"
   echo "  -d dir  : Use directory for recursive mode (default: $dothier_dir)"
   echo "  -H home : Home directory (default: $dothier_home)"
@@ -210,40 +213,22 @@ exec_link()
   fi
 } # dotexec_link
 
-# exec_dir <dothier_workdir> <dothier_home> <dothier_content>
+# exec_dir <dothier_root> <dothier_home> <path> <type> <mode> <link>
 exec_dir()
 {
-  local dothier_workdir # was src
-  local dothier_home # was dst
+  [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
 
-  local dothier_path # was path
-  local dothier_type # was type
-  local dothier_mode # was mode
-  local dothier_link # was link
+  local dothier_root="$1"
+  local dothier_home="$2"
 
-  dothier_workdir="${1:-.}"
-  dothier_home="${2:-$HOME}"
-  shift
-  shift
-  dothier_content=("$@")
-
-  echo "exec_dir"
-  echo "${dothier_content[1]}"
-  echo "exec_dir"
-  return
-
-  local src="$1"
-  local dst="$2"
+  # dothier content
   local path="$3"
   local type="$4"
+  local mode="$5"
+  local link="$6"
 
-  local mode="${5:-$dothier_file_dirmode}"
-  local link="${6:-$dothier_file_link}"
-
-  local src_path="$src/$path"
-  local dst_path="$dst/$path"
-
-  [[ "$dothier_debug" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+  local src_path="$dothier_root/$path"
+  local dst_path="$dothier_home/$path"
 
   # delete mode
   if [[ "$mode" == "0000" ]]
@@ -266,29 +251,27 @@ exec_dir()
     then
       rm -r "$dst_path"
     fi
-
     return
   fi
 
   # check source
   if [[ ! -d "$src_path" ]]
   then
-
     if [[ -e "$src_path" ]]
     then
       echo "E: $src_path exists and is not a directory!"
       return
     fi
-
     mkdir -m "$mode" "$src_path"
   fi
 
+  # check mode
   if [[ "$(stat_mode "$src_path")" != "$mode" ]]
   then
     change_mode "$src_path" "$mode"
   fi
 
-  # not local
+  # destination
   if [[ "$type" != "ldir" ]]
   then
 
@@ -297,14 +280,15 @@ exec_dir()
       && [[ "$link" == "no" ]]
     then
 
+      # exists
       if [[ -e "$dst_path" ]]
       then
         echo "W: $dst_path exists!"
       fi
-
       mkdir -m "$mode" "$dst_path"
     fi
 
+    # check mode
     if [[ "$link" == "no" ]]
     then
       if [[ "$(stat_mode "$dst_path")" != "$mode" ]]
@@ -314,26 +298,26 @@ exec_dir()
     fi
 
     # pass linking
-    dotexec_link "$src" "$dst" "$path" "$type" "$mode" "$link"
+    echo exec_link "$dothier_root" "$dothier_home" "$path" "$type" "$mode" "$link"
   fi
-} # dotexec_dir
+}
 
+# exec_file <dothier_root> <dothier_home> <path> <type> <mode> <link>
 exec_file()
 {
-  return
+  [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
 
-  local src="$1"
-  local dst="$2"
+  local dothier_root="$1"
+  local dothier_home="$2"
+
+  # dothier content
   local path="$3"
   local type="$4"
+  local mode="$5"
+  local link="$6"
 
-  local mode="${5:-$dothier_file_filemode}"
-  local link="${6:-$dothier_file_link}"
-
-  local src_path="$src/$path"
-  local dst_path="$dst/$path"
-
-  [[ "$dothier_debug" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+  local src_path="$dothier_root/$path"
+  local dst_path="$dothier_home/$path"
 
   # delete mode
   if [[ "$mode" == "0000" ]]
@@ -356,8 +340,6 @@ exec_file()
     then
       rm "$dst_path"
     fi
-
-    # done
     return
   fi
 
@@ -368,6 +350,7 @@ exec_file()
     return
   fi
 
+  # check mode
   if [[ "$(stat_mode "$src_path")" != "$mode" ]]
   then
     change_mode "$src_path" "$mode"
@@ -376,10 +359,11 @@ exec_file()
   # pass linking
   if [[ "$type" != "lfile" ]]
   then
-    dotexec_link "$src" "$dst" "$path" "$type" "$mode" "$link"
+    echo exec_link "$dothier_root" "$dothier_home" "$path" "$type" "$mode" "$link"
   fi
-} # dotexec_file
+}
 
+# exec_git
 exec_git()
 {
   return
@@ -446,12 +430,12 @@ read_dothier()
 {
   local dothier_file
   local dothier_home
-  local dothier_workdir
+  local dothier_root
   local dothier_exec
 
   dothier_file="$1"
   dothier_home="$2"
-  dothier_workdir="$(cd "$(dirname "$dothier_file")" && echo "$PWD")"
+  dothier_root="$(cd "$(dirname "$dothier_file")" && echo "$PWD")"
 
   if [[ ! -e "$dothier_file" ]]
   then
@@ -463,9 +447,9 @@ read_dothier()
   # git pull (-g)
   if [[ "$dothier_gitpull" == "yes" ]]
   then
-    if [[ -d "$dothier_workdir/.git" ]]
+    if [[ -d "$dothier_root/.git" ]]
     then
-      ( cd "$dothier_workdir" && git pull )
+      ( cd "$dothier_root" && git pull )
     fi
   fi
 
@@ -505,14 +489,14 @@ read_dothier()
         link="${link:-$dothier_file_gitdepth}"
         ;;
       *)
-        echo "E: unknown type $dothier_type"
+        echo "E: unknown type $type"
         return
         ;;
     esac
 
     if [[ "$(type -t "$dothier_exec")" == "function" ]]
     then
-      "$dothier_exec" "$dothier_workdir" "$dothier_home" \
+      "$dothier_exec" "$dothier_root" "$dothier_home" \
         "$path" "$type" "$mode" "$link"
     else
       echo "E: no such function $dothier_exec"
@@ -549,12 +533,16 @@ read_dothier_recursive()
 check_support
 
 # options
-while getopts ":Dhrgf:d:H:" opt
+while getopts ":Dghrvf:d:H:" opt
 do
   case $opt in
     D)
       dothier_debug="yes"
+      dothier_verbose="yes"
       set -x
+      ;;
+    g)
+      dothier_gitpull="yes"
       ;;
     h)
       show_help
@@ -563,8 +551,8 @@ do
     r)
       dothier_recursive="yes"
       ;;
-    g)
-      dothier_gitpull="yes"
+    v)
+      dothier_verbose="yes"
       ;;
     f)
       dothier_file="$OPTARG"
