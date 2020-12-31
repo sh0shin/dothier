@@ -95,6 +95,8 @@ change_mode()
 
 exec_link()
 {
+  return
+
   local src="$1"
   local dst="$2"
   local path="$3"
@@ -208,6 +210,8 @@ exec_link()
 
 exec_dir()
 {
+  return
+
   local src="$1"
   local dst="$2"
   local path="$3"
@@ -296,6 +300,8 @@ exec_dir()
 
 exec_file()
 {
+  return
+
   local src="$1"
   local dst="$2"
   local path="$3"
@@ -356,6 +362,8 @@ exec_file()
 
 exec_git()
 {
+  return
+
   local src="$1"
   local dst="$2"
   local path="$3"
@@ -413,18 +421,25 @@ exec_git()
   done < "$src_path"
 } # dotexec_git
 
+# read_dothier <dothier_file> <dothier_home>
 read_dothier()
 {
-  local hier src dst path type mode link
+  local dothier_file
+  local dothier_home
+  local dothier_dirname
+  local dothier_path
+  local dothier_type
+  local dothier_mode
+  local dothier_link
   local dothier_exec
 
-  hier="$1"
-  src="$(cd "$(dirname "$hier")" && echo "$PWD")"
-  dst="$2"
+  dothier_file="$1"
+  dothier_home="$2"
+  dothier_dirname="$(cd "$(dirname "$dothier_file")" && echo "$PWD")"
 
-  if [[ ! -e "$hier" ]]
+  if [[ ! -e "$dothier_file" ]]
   then
-    echo "E: file $hier not found!"
+    echo "E: file $dothier_file not found!"
     show_help
     return
   fi
@@ -432,19 +447,24 @@ read_dothier()
   # git pull (-g)
   if [[ "$dothier_gitpull" == "yes" ]]
   then
-    if [[ -d "$src/.git" ]]
+    if [[ -d "$dothier_dirname/.git" ]]
     then
-      ( cd "$src" && git pull )
+      ( cd "$dothier_dirname" && git pull )
     fi
   fi
 
-  while IFS=$' \t' read -r path type mode link
+  # read file
+  IFS=$' \t'
+  while read -r dothier_path dothier_type dothier_mode dothier_link
   do
     # skip comments
-    [[ "$path" =~ ^(#.*)?$ ]] && continue
+    if [[ "$dothier_path" =~ ^(#.*)?$ ]]
+    then
+      continue
+    fi
 
     # execute type
-    case "$type" in
+    case "$dothier_type" in
       dir|ldir)
         dothier_exec="exec_dir"
         ;;
@@ -456,39 +476,49 @@ read_dothier()
         ;;
       git|lgit)
         dothier_exec="exec_git"
+        # dothier_mode == dothier_gitpull
+        # dothier_link == dothier_gitdepth
         ;;
       *)
-        echo "E: unknown type $type"
+        echo "E: unknown type $dothier_type"
         return
         ;;
     esac
 
     if [[ "$(type -t "$dothier_exec")" == "function" ]]
     then
-      "$dothier_exec" "$src" "$dst" "$path" "$type" "$mode" "$link"
+      "$dothier_exec" "$dothier_dirname" "$dothier_home" \
+          "$dothier_path" "$dothier_type" "$dothier_mode" "$dothier_link"
     else
       echo "E: no such function $dothier_exec"
     fi
 
-  done < "$hier"
-} # read_dothier
+  done < "$dothier_file"
+  unset IFS
+}
 
-dothier_recursive()
+# read_dothier_recursive <dothier_file> <dothier_home> <dothier_dir>
+read_dothier_recursive()
 {
-  local hier hier_path hier_name dst src
+  local dothier_file
+  local dothier_home
+  local dothier_dir
+  local dothier_found
+  local dothier_found_for
+  local dothier_found_dirname
 
-  hier="$1"
-  dst="$2"
-  src="$3"
-  hier_path="$(find "$src" -iname "$hier" | sort -u)"
+  dothier_file="$1"
+  dothier_home="$2"
+  dothier_dir="$3"
+  dothier_found="$(find "$dothier_dir" -type f -iname "$dothier_file" | sort -u)"
 
-  for path in $hier_path
+  for dothier_found_for in $dothier_found
   do
-    hier_name="$(basename "$(dirname "$path")")"
-    echo ": $hier_name"
-    read_dothier "$path" "$dst"
+    dothier_found_dirname="$(basename "$(dirname "$dothier_found_for")")"
+    echo ": $dothier_found_dirname"
+    read_dothier "$dothier_found_for" "$dothier_home"
   done
-} # dothier_recursive
+}
 
 # supported
 check_support
@@ -537,17 +567,17 @@ do
   esac
 done
 
+# check
 if [[ "$OPTIND" -eq 1 ]] || [[ "$OPTIND" -lt "$#" ]]
 then
   show_usage
   exit 1
 fi
-#shift $((OPTIND -1))
 
 # main
 if [[ "$dothier_recursive" == "yes" ]]
 then
-  dothier_recursive "$dothier_file" "$dothier_home" "$dothier_dir"
+  read_dothier_recursive "$dothier_file" "$dothier_home" "$dothier_dir"
 else
   read_dothier "$dothier_file" "$dothier_home"
 fi
