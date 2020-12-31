@@ -62,7 +62,8 @@ show_help()
 
 stat_mode()
 {
-  local path stat
+  local path
+  local stat
   path="${1:-/dev/null}"
 
   case "$OSTYPE" in
@@ -78,7 +79,8 @@ stat_mode()
 
 change_mode()
 {
-  local path mode
+  local path
+  local mode
   path="$1"
   mode="$2"
 
@@ -208,8 +210,27 @@ exec_link()
   fi
 } # dotexec_link
 
+# exec_dir <dothier_workdir> <dothier_home> [dothier_file_content]
 exec_dir()
 {
+  echo "$@"
+  local dothier_workdir # was src
+  local dothier_home # was dst
+  # dothier file content
+  local dothier_content
+
+  local dothier_path # was path
+  local dothier_type # was type
+  local dothier_mode # was mode
+  local dothier_link # was link
+
+  dothier_workdir="${1:-.}"
+  dothier_home="${2:-$HOME}"
+
+  dothier_content=("$3")
+
+
+  echo "${dothier_content[*]}"
   return
 
   local src="$1"
@@ -426,16 +447,13 @@ read_dothier()
 {
   local dothier_file
   local dothier_home
-  local dothier_dirname
-  local dothier_path
-  local dothier_type
-  local dothier_mode
-  local dothier_link
+  local dothier_workdir
+  local dothier_content
   local dothier_exec
 
   dothier_file="$1"
   dothier_home="$2"
-  dothier_dirname="$(cd "$(dirname "$dothier_file")" && echo "$PWD")"
+  dothier_workdir="$(cd "$(dirname "$dothier_file")" && echo "$PWD")"
 
   if [[ ! -e "$dothier_file" ]]
   then
@@ -447,24 +465,31 @@ read_dothier()
   # git pull (-g)
   if [[ "$dothier_gitpull" == "yes" ]]
   then
-    if [[ -d "$dothier_dirname/.git" ]]
+    if [[ -d "$dothier_workdir/.git" ]]
     then
-      ( cd "$dothier_dirname" && git pull )
+      ( cd "$dothier_workdir" && git pull )
     fi
   fi
 
   # read file
   IFS=$' \t'
-  while read -r dothier_path dothier_type dothier_mode dothier_link
+  while read -r path type mode link
   do
     # skip comments
-    if [[ "$dothier_path" =~ ^(#.*)?$ ]]
+    if [[ "$path" =~ ^(#.*)?$ ]]
     then
       continue
     fi
 
+    # content
+    declare -A dothier_content
+    dothier_content[path]="$dothier_path"
+    dothier_content[type]="$dothier_type"
+    dothier_content[mode]="$dothier_mode"
+    dothier_content[link]="$dothier_link"
+
     # execute type
-    case "$dothier_type" in
+    case "$type" in
       dir|ldir)
         dothier_exec="exec_dir"
         ;;
@@ -476,8 +501,8 @@ read_dothier()
         ;;
       git|lgit)
         dothier_exec="exec_git"
-        # dothier_mode == dothier_gitpull
-        # dothier_link == dothier_gitdepth
+        dothier_content[gitpull]="$mode"
+        dothier_content[gitdepth]="$link"
         ;;
       *)
         echo "E: unknown type $dothier_type"
@@ -487,8 +512,7 @@ read_dothier()
 
     if [[ "$(type -t "$dothier_exec")" == "function" ]]
     then
-      "$dothier_exec" "$dothier_dirname" "$dothier_home" \
-          "$dothier_path" "$dothier_type" "$dothier_mode" "$dothier_link"
+      "$dothier_exec" "$dothier_workdir" "$dothier_home" "${dothier_content[@]}"
     else
       echo "E: no such function $dothier_exec"
     fi
