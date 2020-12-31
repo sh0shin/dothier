@@ -98,22 +98,22 @@ change_mode()
     esac
 } # change_mode
 
+# exec_link <dothier_root> <dothier_home> <path> <type> <mode> <link>
 exec_link()
 {
-  return
+  [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
 
-  local src="$1"
-  local dst="$2"
+  local dothier_root="$1"
+  local dothier_home="$2"
+
+  # dothier content
   local path="$3"
   local type="$4"
+  local mode="$5"
+  local link="$6"
 
-  local mode="${5:-$dothier_file_filemode}"
-  local link="${6:-$dothier_file_link}"
-
-  local src_path="$src/$path"
-  local dst_path="$dst/$path"
-
-  [[ "$dothier_debug" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+  local src_path="$dothier_root/$path"
+  local dst_path="$dothier_home/$path"
 
   # dir & file
   if [[ "$type" == "dir" ]] || [[ "$type" == "file" ]]
@@ -211,7 +211,7 @@ exec_link()
       ln -s "$src_path" "$dst_path"
     fi
   fi
-} # dotexec_link
+}
 
 # exec_dir <dothier_root> <dothier_home> <path> <type> <mode> <link>
 exec_dir()
@@ -298,7 +298,7 @@ exec_dir()
     fi
 
     # pass linking
-    echo exec_link "$dothier_root" "$dothier_home" "$path" "$type" "$mode" "$link"
+    exec_link "$dothier_root" "$dothier_home" "$path" "$type" "$mode" "$link"
   fi
 }
 
@@ -359,37 +359,36 @@ exec_file()
   # pass linking
   if [[ "$type" != "lfile" ]]
   then
-    echo exec_link "$dothier_root" "$dothier_home" "$path" "$type" "$mode" "$link"
+    exec_link "$dothier_root" "$dothier_home" "$path" "$type" "$mode" "$link"
   fi
 }
 
-# exec_git
+# exec_git <dothier_root> <dothier_home> <path> <type> <gitpull> <gitdepth>
 exec_git()
 {
-  return
+  [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
 
-  local src="$1"
-  local dst="$2"
+  local dothier_root="$1"
+  local dothier_home="$2"
+
   local path="$3"
   local type="$4"
+  local gitpull="$5"
+  local gitdepth="$6"
 
-  local gitpull="${5:-$dothier_file_gitpull}"
-  local gitdepth="${6:-$dothier_file_gitdepth}"
-
-  local src_path="$src/$path"
+  local src_path="$dothier_root/$path"
   local dst_path
 
   if [[ "$type" == "lgit" ]]
   then
-    dst_path="$(dirname "$src/$path")"
+    dst_path="$(dirname "$dothier_root/$path")"
   else
-    dst_path="$(dirname "$dst/$path")"
+    dst_path="$(dirname "$dothier_home/$path")"
   fi
 
-  [[ "$dothier_debug" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
-
   local giturl gitname gitdir
-  while IFS=$' \t' read -r giturl gitdst
+  IFS=$' \t'
+  while read -r giturl gitdst
   do
     # skip comments
     [[ "$giturl" =~ ^(#.*)?$ ]] && continue
@@ -421,9 +420,9 @@ exec_git()
     else
       ( git clone -q --depth "$gitdepth" "$giturl" "$gitdst" )
     fi
-
   done < "$src_path"
-} # dotexec_git
+  unset IFS
+}
 
 # read_dothier <dothier_file> <dothier_home>
 read_dothier()
