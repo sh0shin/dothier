@@ -1,30 +1,33 @@
 #!/usr/bin/env bash
 #
 
-# defaults
-dothome="$HOME"
-dothier=".hier"
-dotdir="$HOME/.dotfiles"
+# self, version, url
+readonly dothier_self="$(basename "$0")"
+readonly dothier_version="v0.1.0-beta.2"
+readonly dothier_url="https://sh0shin.org/dothier"
 
-def_dirmode="0755"
-def_filemode="0644"
-def_link="no"
-def_gitpull="no"
-def_gitdepth="1"
+# default options
+# -D
+dothier_debug="no"
+# -g
+dothier_gitpull="no"
+# -r
+dothier_recursive="no"
+# -v
+dothier_verbose="no"
+# -f file
+dothier_file=".hier"
+# -d dir
+dothier_dir="$HOME/.dotfiles"
+# -H home
+dothier_home="$HOME"
 
-# debug
-debug="no"
-
-# recursive
-recursive="no"
-
-# git pull
-gitpull="no"
-
-# version
-readonly dotself="$(basename "$0")"
-readonly dotversion="v0.1.0-beta"
-readonly doturl="https://sh0shin.org/dothier"
+# dothier file defaults
+: "${dothier_file_dirmode:=0755}"
+: "${dothier_file_filemode:=0644}"
+: "${dothier_file_link:=no}"
+: "${dothier_file_gitpull:=no}"
+: "${dothier_file_gitdepth:=1}"
 
 check_support()
 {
@@ -41,27 +44,29 @@ check_support()
 
 show_usage()
 {
-  echo "$dotself $dotversion ( $doturl )"
-  echo "Usage: $dotself [-Dhr] [-f file] [-d dir] [-H home]"
+  echo "$dothier_self $dothier_version ( $dothier_url )"
+  echo "Usage: $dothier_self [-Dhrv] [-f file] [-d dir] [-H home]"
 } # show_usage
 
 show_help()
 {
   show_usage
   echo "Options:"
-  echo "  -D      : Enable debug output"
+  echo "  -D      : Enable verbose debug output"
+  echo "  -g      : Enable git pull (default: $dothier_gitpull)"
   echo "  -h      : Show this help"
-  echo "  -r      : Enabled recursive mode (default $recursive)"
-  echo "  -g      : Enable git pull (default $gitpull)"
-  echo "  -f file : The .hier file to use (default $dothier)"
-  echo "  -d dir  : Use directory for recursive mode (default: $dotdir)"
-  echo "  -H home : Home directory (default $dothome)"
+  echo "  -r      : Enabled recursive mode (default: $dothier_recursive)"
+  echo "  -v      : Verbose output (default: $dothier_verbose)"
+  echo "  -f file : The .hier file to use (default: $dothier_file)"
+  echo "  -d dir  : Use directory for recursive mode (default: $dothier_dir)"
+  echo "  -H home : Home directory (default: $dothier_home)"
   echo
 } # show_help
 
 stat_mode()
 {
   local path
+  local stat
   path="${1:-/dev/null}"
 
   case "$OSTYPE" in
@@ -77,7 +82,8 @@ stat_mode()
 
 change_mode()
 {
-  local path mode
+  local path
+  local mode
   path="$1"
   mode="$2"
 
@@ -86,24 +92,28 @@ change_mode()
       chmod -h "$mode" "$path"
       ;;
     linux*)
+      # FIXME
       [[ ! -L "$path" ]] && echo chmod "$mode" "$path"
       ;;
     esac
 } # change_mode
 
-dotexec_link()
+# exec_link <dothier_root> <dothier_home> <path> <type> <mode> <link>
+exec_link()
 {
-  local src="$1"
-  local dst="$2"
+  [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+
+  local dothier_root="$1"
+  local dothier_home="$2"
+
+  # dothier content
   local path="$3"
   local type="$4"
-  local mode="${5:-$def_filemode}"
-  local link="${6:-$def_link}"
+  local mode="$5"
+  local link="$6"
 
-  local src_path="$src/$path"
-  local dst_path="$dst/$path"
-
-  [[ "$debug" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+  local src_path="$dothier_root/$path"
+  local dst_path="$dothier_home/$path"
 
   # dir & file
   if [[ "$type" == "dir" ]] || [[ "$type" == "file" ]]
@@ -201,21 +211,24 @@ dotexec_link()
       ln -s "$src_path" "$dst_path"
     fi
   fi
-} # dotexec_link
+}
 
-dotexec_dir()
+# exec_dir <dothier_root> <dothier_home> <path> <type> <mode> <link>
+exec_dir()
 {
-  local src="$1"
-  local dst="$2"
+  [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+
+  local dothier_root="$1"
+  local dothier_home="$2"
+
+  # dothier content
   local path="$3"
   local type="$4"
-  local mode="${5:-$def_dirmode}"
-  local link="${6:-$def_link}"
+  local mode="$5"
+  local link="$6"
 
-  local src_path="$src/$path"
-  local dst_path="$dst/$path"
-
-  [[ "$debug" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+  local src_path="$dothier_root/$path"
+  local dst_path="$dothier_home/$path"
 
   # delete mode
   if [[ "$mode" == "0000" ]]
@@ -238,29 +251,27 @@ dotexec_dir()
     then
       rm -r "$dst_path"
     fi
-
     return
   fi
 
   # check source
   if [[ ! -d "$src_path" ]]
   then
-
     if [[ -e "$src_path" ]]
     then
       echo "E: $src_path exists and is not a directory!"
       return
     fi
-
     mkdir -m "$mode" "$src_path"
   fi
 
+  # check mode
   if [[ "$(stat_mode "$src_path")" != "$mode" ]]
   then
     change_mode "$src_path" "$mode"
   fi
 
-  # not local
+  # destination
   if [[ "$type" != "ldir" ]]
   then
 
@@ -269,14 +280,15 @@ dotexec_dir()
       && [[ "$link" == "no" ]]
     then
 
+      # exists
       if [[ -e "$dst_path" ]]
       then
         echo "W: $dst_path exists!"
       fi
-
       mkdir -m "$mode" "$dst_path"
     fi
 
+    # check mode
     if [[ "$link" == "no" ]]
     then
       if [[ "$(stat_mode "$dst_path")" != "$mode" ]]
@@ -286,23 +298,26 @@ dotexec_dir()
     fi
 
     # pass linking
-    dotexec_link "$src" "$dst" "$path" "$type" "$mode" "$link"
+    exec_link "$dothier_root" "$dothier_home" "$path" "$type" "$mode" "$link"
   fi
-} # dotexec_dir
+}
 
-dotexec_file()
+# exec_file <dothier_root> <dothier_home> <path> <type> <mode> <link>
+exec_file()
 {
-  local src="$1"
-  local dst="$2"
+  [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+
+  local dothier_root="$1"
+  local dothier_home="$2"
+
+  # dothier content
   local path="$3"
   local type="$4"
-  local mode="${5:-$def_filemode}"
-  local link="${6:-$def_link}"
+  local mode="$5"
+  local link="$6"
 
-  local src_path="$src/$path"
-  local dst_path="$dst/$path"
-
-  [[ "$debug" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+  local src_path="$dothier_root/$path"
+  local dst_path="$dothier_home/$path"
 
   # delete mode
   if [[ "$mode" == "0000" ]]
@@ -325,8 +340,6 @@ dotexec_file()
     then
       rm "$dst_path"
     fi
-
-    # done
     return
   fi
 
@@ -337,6 +350,7 @@ dotexec_file()
     return
   fi
 
+  # check mode
   if [[ "$(stat_mode "$src_path")" != "$mode" ]]
   then
     change_mode "$src_path" "$mode"
@@ -345,33 +359,36 @@ dotexec_file()
   # pass linking
   if [[ "$type" != "lfile" ]]
   then
-    dotexec_link "$src" "$dst" "$path" "$type" "$mode" "$link"
+    exec_link "$dothier_root" "$dothier_home" "$path" "$type" "$mode" "$link"
   fi
-} # dotexec_file
+}
 
-dotexec_git()
+# exec_git <dothier_root> <dothier_home> <path> <type> <gitpull> <gitdepth>
+exec_git()
 {
-  local src="$1"
-  local dst="$2"
+  [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+
+  local dothier_root="$1"
+  local dothier_home="$2"
+
   local path="$3"
   local type="$4"
-  local gitpull="${5:-$def_gitpull}"
-  local gitdepth="${6:-$def_gitdepth}"
+  local gitpull="$5"
+  local gitdepth="$6"
 
-  local src_path="$src/$path"
+  local src_path="$dothier_root/$path"
   local dst_path
 
   if [[ "$type" == "lgit" ]]
   then
-    dst_path="$(dirname "$src/$path")"
+    dst_path="$(dirname "$dothier_root/$path")"
   else
-    dst_path="$(dirname "$dst/$path")"
+    dst_path="$(dirname "$dothier_home/$path")"
   fi
 
-  [[ "$debug" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
-
   local giturl gitname gitdir
-  while IFS=$' \t' read -r giturl gitdst
+  IFS=$' \t'
+  while read -r giturl gitdst
   do
     # skip comments
     [[ "$giturl" =~ ^(#.*)?$ ]] && continue
@@ -403,52 +420,72 @@ dotexec_git()
     else
       ( git clone -q --depth "$gitdepth" "$giturl" "$gitdst" )
     fi
-
   done < "$src_path"
-} # dotexec_git
+  unset IFS
+}
 
+# read_dothier <dothier_file> <dothier_home>
 read_dothier()
 {
-  local hier src dst path type mode link dotexec
+  local dothier_file
+  local dothier_home
+  local dothier_root
+  local dothier_exec
 
-  hier="$1"
-  src="$(cd "$(dirname "$hier")" && echo "$PWD")"
-  dst="$2"
+  dothier_file="$1"
+  dothier_home="$2"
+  dothier_root="$(cd "$(dirname "$dothier_file")" && echo "$PWD")"
 
-  if [[ ! -e "$hier" ]]
+  if [[ ! -e "$dothier_file" ]]
   then
-    echo "E: file $hier not found!"
+    echo "E: file $dothier_file not found!"
     show_help
     return
   fi
 
-  # git pull
-  if [[ "$gitpull" == "yes" ]]
+  # git pull (-g)
+  if [[ "$dothier_gitpull" == "yes" ]]
   then
-    if [[ -d "$src/.git" ]]
+    if [[ -d "$dothier_root/.git" ]]
     then
-      ( cd "$src" && git pull )
+      ( cd "$dothier_root" && git pull )
     fi
   fi
 
-  while IFS=$' \t' read -r path type mode link
+  # read file
+  IFS=$' \t'
+  while read -r path type mode link
   do
     # skip comments
-    [[ "$path" =~ ^(#.*)?$ ]] && continue
+    if [[ "$path" =~ ^(#.*)?$ ]]
+    then
+      continue
+    fi
+
+    # default link
+    link="${link:-$dothier_file_link}"
 
     # execute type
     case "$type" in
       dir|ldir)
-        dotexec="dotexec_dir"
+        dothier_exec="exec_dir"
+        # default dirmode
+        mode="${mode:-$dothier_file_dirmode}"
         ;;
       file|lfile)
-        dotexec="dotexec_file"
+        dothier_exec="exec_file"
+        # default filemode
+        mode="${mode:-$dothier_file_filemode}"
         ;;
       link|llink)
-        dotexec="dotexec_link"
+        dothier_exec="exec_link"
         ;;
       git|lgit)
-        dotexec="dotexec_git"
+        dothier_exec="exec_git"
+        # default gitpull
+        mode="${mode:-$dothier_file_gitpull}"
+        # default gitdepth
+        link="${link:-$dothier_file_gitdepth}"
         ;;
       *)
         echo "E: unknown type $type"
@@ -456,62 +493,74 @@ read_dothier()
         ;;
     esac
 
-    if [[ "$(type -t "$dotexec")" == "function" ]]
+    if [[ "$(type -t "$dothier_exec")" == "function" ]]
     then
-      "$dotexec" "$src" "$dst" "$path" "$type" "$mode" "$link"
+      "$dothier_exec" "$dothier_root" "$dothier_home" \
+        "$path" "$type" "$mode" "$link"
     else
-      echo "E: no such function $dotexec"
+      echo "E: no such function $dothier_exec"
     fi
 
-  done < "$hier"
-} # read_dothier
+  done < "$dothier_file"
+  unset IFS
+}
 
-dothier_recursive()
+# read_dothier_recursive <dothier_file> <dothier_home> <dothier_dir>
+read_dothier_recursive()
 {
-  local hier hier_path hier_name dst src
+  local dothier_file
+  local dothier_home
+  local dothier_dir
+  local dothier_found
+  local dothier_found_for
+  local dothier_found_dirname
 
-  hier="$1"
-  dst="$2"
-  src="$3"
-  hier_path="$(find "$src" -iname "$hier" | sort -u)"
+  dothier_file="$1"
+  dothier_home="$2"
+  dothier_dir="$3"
+  dothier_found="$(find "$dothier_dir" -type f -iname "$dothier_file" | sort -u)"
 
-  for path in $hier_path
+  for dothier_found_for in $dothier_found
   do
-    hier_name="$(basename "$(dirname "$path")")"
-    echo ": $hier_name"
-    read_dothier "$path" "$dst"
+    dothier_found_dirname="$(basename "$(dirname "$dothier_found_for")")"
+    echo ": $dothier_found_dirname"
+    read_dothier "$dothier_found_for" "$dothier_home"
   done
-} # dothier_recursive
+}
 
 # supported
 check_support
 
 # options
-while getopts ":Dhrgf:d:H:" opt
+while getopts ":Dghrvf:d:H:" opt
 do
   case $opt in
     D)
-      debug="yes"
+      dothier_debug="yes"
+      dothier_verbose="yes"
       set -x
+      ;;
+    g)
+      dothier_gitpull="yes"
       ;;
     h)
       show_help
       exit 1
       ;;
     r)
-      recursive="yes"
+      dothier_recursive="yes"
       ;;
-    g)
-      gitpull="yes"
+    v)
+      dothier_verbose="yes"
       ;;
     f)
-      dothier="$OPTARG"
+      dothier_file="$OPTARG"
       ;;
     d)
-      dotdir="$OPTARG"
+      dothier_dir="$OPTARG"
       ;;
     H)
-      dothome="$OPTARG"
+      dothier_home="$OPTARG"
       ;;
     \?)
       echo "-$OPTARG is invalid!"
@@ -530,17 +579,17 @@ do
   esac
 done
 
+# check
 if [[ "$OPTIND" -eq 1 ]] || [[ "$OPTIND" -lt "$#" ]]
 then
   show_usage
   exit 1
 fi
-#shift $((OPTIND -1))
 
 # main
-if [[ "$recursive" == "yes" ]]
+if [[ "$dothier_recursive" == "yes" ]]
 then
-  dothier_recursive "$dothier" "$dothome" "$dotdir"
+  read_dothier_recursive "$dothier_file" "$dothier_home" "$dothier_dir"
 else
-  read_dothier "$dothier" "$dothome"
+  read_dothier "$dothier_file" "$dothier_home"
 fi
