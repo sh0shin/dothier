@@ -11,8 +11,6 @@ Bash script to manage dotfiles hierarchy.
  * `ldir` - Local directory
  * `file` - File
  * `lfile` - Local file
- * `link` - (Sym)Link
+ * `link` - (Sym)link
  * `git` - Git
-
-## TODO
-...
+ * `lgit` - Local git
