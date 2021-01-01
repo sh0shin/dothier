@@ -3,7 +3,7 @@
 
 # self, version, url
 readonly dothier_self="$(basename "$0")"
-readonly dothier_version="v0.1.0-beta.3"
+readonly dothier_version="v0.1.0-beta.4"
 readonly dothier_url="https://sh0shin.org/dothier"
 
 # default options
