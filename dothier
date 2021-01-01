@@ -28,6 +28,7 @@ dothier_home="$HOME"
 : "${dothier_file_link:=no}"
 : "${dothier_file_gitpull:=no}"
 : "${dothier_file_gitdepth:=1}"
+: "${dothier_file_tmex:=0}"
 
 check_support()
 {
@@ -98,7 +99,7 @@ change_mode()
     esac
 } # change_mode
 
-# exec_link <dothier_root> <dothier_home> <path> <type> <mode> <link>
+# exec_link <dothier_root> <dothier_home> <path> <type> <mode> <link> <tmex>
 exec_link()
 {
   [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
@@ -111,6 +112,7 @@ exec_link()
   local type="$4"
   local mode="$5"
   local link="$6"
+  local tmex="$7"
 
   local src_path="$dothier_root/$path"
   local dst_path="$dothier_home/$path"
@@ -211,9 +213,12 @@ exec_link()
       ln -s "$src_path" "$dst_path"
     fi
   fi
+
+  # pass tmutil
+  exec_tmutil "$dst_path" "$tmex"
 }
 
-# exec_dir <dothier_root> <dothier_home> <path> <type> <mode> <link>
+# exec_dir <dothier_root> <dothier_home> <path> <type> <mode> <link> <tmex>
 exec_dir()
 {
   [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
@@ -226,6 +231,7 @@ exec_dir()
   local type="$4"
   local mode="$5"
   local link="$6"
+  local tmex="$7"
 
   local src_path="$dothier_root/$path"
   local dst_path="$dothier_home/$path"
@@ -298,11 +304,11 @@ exec_dir()
     fi
 
     # pass linking
-    exec_link "$dothier_root" "$dothier_home" "$path" "$type" "$mode" "$link"
+    exec_link "$dothier_root" "$dothier_home" "$path" "$type" "$mode" "$link" "$tmex"
   fi
 }
 
-# exec_file <dothier_root> <dothier_home> <path> <type> <mode> <link>
+# exec_file <dothier_root> <dothier_home> <path> <type> <mode> <link> <tmex>
 exec_file()
 {
   [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
@@ -315,6 +321,7 @@ exec_file()
   local type="$4"
   local mode="$5"
   local link="$6"
+  local tmex="$7"
 
   local src_path="$dothier_root/$path"
   local dst_path="$dothier_home/$path"
@@ -359,7 +366,7 @@ exec_file()
   # pass linking
   if [[ "$type" != "lfile" ]]
   then
-    exec_link "$dothier_root" "$dothier_home" "$path" "$type" "$mode" "$link"
+    exec_link "$dothier_root" "$dothier_home" "$path" "$type" "$mode" "$link" "$tmex"
   fi
 }
 
@@ -396,6 +403,13 @@ exec_git()
     gitname="${giturl##*/}"
     gitdir="${gitname%*.git}"
 
+    # tmutil exclusion
+    if [[ "$gitdst" =~ ^@ ]]
+    then
+      tmex=1
+      gitdst="${gitdst##@}"
+    fi
+
     if [[ -n "$gitdst" ]]
     then
       # absolute path
@@ -425,8 +439,47 @@ exec_git()
     else
       ( git clone -q --depth "$gitdepth" "$giturl" "$gitdst" )
     fi
+
+    # pass tmutil
+    exec_tmutil "$gitdst" "$tmex"
+
   done < "$src_path"
   unset IFS
+}
+
+# exec_tmutil <path> <tmex>
+exec_tmutil()
+{
+  [[ "$OSTYPE" != darwin* ]] && return
+  [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
+
+  local path="$1"
+  local tmex="$2"
+
+  # destination
+  if [[ -e "$path" ]]
+  then
+    if [[ -L "$path" ]] && [[ "$tmex" -eq 1 ]]
+    then
+      echo "  : tmutil: is link $path"
+      return
+    fi
+
+    if ( xattr "$path" | grep -q com_apple_backup_excludeItem )
+    then
+      if [[ "$tmex" -eq  0 ]]
+      then
+        echo " : tmutil: include $path"
+        tmutil removeexclusion "$path"
+      fi
+    else
+      if [[ "$tmex" -eq 1 ]]
+      then
+        echo " : tmutil: exclude $path"
+        tmutil addexclusion "$path"
+      fi
+    fi
+  fi
 }
 
 # read_dothier <dothier_file> <dothier_home>
@@ -470,6 +523,14 @@ read_dothier()
     # default link
     link="${link:-$dothier_file_link}"
 
+    # tmutil exclusion
+    tmex="${dothier_file_tmex}"
+    if [[ "$mode" =~ ^@ ]]
+    then
+      mode="${mode##@}"
+      tmex=1
+    fi
+
     # execute type
     case "$type" in
       dir|ldir)
@@ -500,8 +561,9 @@ read_dothier()
 
     if [[ "$(type -t "$dothier_exec")" == "function" ]]
     then
+      # exec type
       "$dothier_exec" "$dothier_root" "$dothier_home" \
-        "$path" "$type" "$mode" "$link"
+        "$path" "$type" "$mode" "$link" "$tmex"
     else
       echo "E: no such function $dothier_exec"
     fi
