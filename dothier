@@ -164,7 +164,8 @@ exec_mode()
       fi
     else
       # TODO: handle links
-      echo -e "${c_todo}[T] (mode)\tUNHANDLED LINK PATH=$path TYPE=$type${c_none}"
+      #echo -e "${c_todo}[T] (mode)\tUNHANDLED LINK PATH=$path TYPE=$type${c_none}"
+      return
     fi
   else
     if [[ "$dothier_verbose" == true ]]
