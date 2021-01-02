@@ -87,6 +87,7 @@ exec_mode()
 {
   local path="$1"
   local mode="$2"
+  local type="$3"
   local _mode
 
   # debug
@@ -94,7 +95,8 @@ exec_mode()
   then
     echo -e "[D] (mode)\tEXEC" \
           "PATH=$path" \
-          "MODE=$mode"
+          "MODE=$mode" \
+          "TYPE=$type"
   fi
 
   # delete mode
@@ -105,14 +107,14 @@ exec_mode()
     # directory
     if [[ -d "$path" ]]
     then
-      echo -e "[I] (mode:dir)\tREMOVING $path"
-      echo rmdir "$path"
+      echo -e "[I] (mode)\tREMOVING PATH=$path TYPE=$type"
+      rmdir "$path"
 
     # file
     elif [[ -f "$path" ]]
     then
-      echo -e "[I] (mode:file)\tREMOVING $path"
-      echo "rm $path"
+      echo -e "[I] (mode)\tREMOVING PATH=$path TYPE=$type"
+      rm "$path"
     fi
     return
   fi
@@ -128,7 +130,7 @@ exec_mode()
       if [[ -d "$path" ]]
       then
         # TODO: warn dirmode <700
-        echo -e "[I] (mode:dir)\tCHANGING $_mode > $mode $path"
+        echo -e "[I] (mode)\tCHANGING MODE=$_mode > $mode PATH=$path TYPE=$type"
         chmod "$mode" "$path"
       fi
 
@@ -136,14 +138,14 @@ exec_mode()
       if [[ -f "$path" ]]
       then
         # TODO: warn filemode >770
-        echo -e "[I] (mode:file)\tCHANGING $_mode > $mode $path"
+        echo -e "[I] (mode)\tCHANGING MODE=$_mode > $mode PATH=$path TYPE=$type"
         chmod "$mode" "$path"
       fi
     else
-      echo -e "[X] (mode:link)\t$path"
+      echo -e "[X] (mode)\tPATH=$path TYPE=$type"
     fi
   else
-    echo -e "[V] (mode)\tOK $mode $path"
+    echo -e "[V] (mode)\tOK MODE=$mode PATH=$path TYPE=$type"
   fi
 }
 
@@ -179,45 +181,68 @@ exec_link()
   if [[ "$type" == "ldir" ]] || [[ "$type" == "lfile" ]]
   then
     # unsupported link
-    if [[ "$link" == "yes" ]]
+    if [[ "$link" == "yes" ]] || [[ "$link" != "no" ]]
     then
-      echo -e "[E] (link)\tTYPE $type UNSUPPORTED LINK=yes"
+      echo -e "[W] (link)\tUNSUPPORTED TYPE=$type LINK=$link"
+      return
+    else
+      # skip
+      if [[ "$dothier_debug" == true ]]
+      then
+        echo -e "[D] (link)\tSKIPPING TYPE=$type"
+      fi
       return
     fi
   fi
 
-  # devel
-  return
-
-  # dir & file
-  if [[ "$type" == "dir" ]] || [[ "$type" == "file" ]]
+  # type dir || file
+  if [[ "$type" == "dir" ]] || [[ "$type" == "lfile" ]]
   then
+    echo -e "[D] (link)\tDOING TYPE=$type"
 
-    if [[ "$link" != "yes" ]] \
-      && [[ "$link" != "no" ]]
+    if [[ "$link" != "yes" ]] && [[ "$link" != "no" ]]
     then
-      dst_path="$dothier_home/$link"
+      echo -e "[D] (link)\tSETTING $home/$link"
+      home_path="$home/$link"
     fi
+  fi
 
-  # link
-  elif [[ "$type" == "link" ]]
+  # type link
+  if [[ "$type" == "link" ]]
   then
+    echo -e "[D] (link)\tDOING TYPE=$type"
 
-    if [[ "$link" != "yes" ]] \
-      && [[ "$link" != "no" ]]
+    if [[ "$link" != "yes" ]] && [[ "$link" != "no" ]]
     then
 
-      # absolute link
       if [[ "$link" =~ ^(/.*)?$ ]]
       then
-        src_path="$link"
-
-      # relative link
+        # absolute
+        root_path="$link"
       else
-        src_path="$dothier_root/$link"
+        # relative
+        root_path="$root/$link"
       fi
     fi
   fi
+
+  # check source
+  if [[ ! -e "$root_path" ]] && [[ "$link" != "no" ]]
+  then
+    echo -e "[E] (link)\tUNREADABLE TYPE=$type $root_path LINK=$link"
+    return 1
+  fi
+
+  # check & clean destination
+  if [[ ! -L "$home_path" ]] && [[ -d "$home_path" ]] && [[ "$type" != "dir" ]]
+  then
+    echo -e "[I] (link)\tREMOVING DIRECTORY $home_path"
+    echo "rm -r $home_path"
+  fi
+
+
+  # devel
+  return
 
   # check source
   if [[ ! -e "$src_path" ]]
@@ -308,20 +333,27 @@ exec_dir()
 
   if [[ "$dothier_debug" == true ]]
   then
-    echo -e "[D] ($type)\tEXEC" \
+    echo -e "[D] (dir)\tEXEC" \
           "ROOT=$root" \
           "HOME=$home" \
           "PATH=$path" \
+          "TYPE=$type" \
           "MODE=$mode" \
           "LINK=$link" \
           "TMEX=$tmex"
   fi
 
   # delete mode
-  if [[ "$mode" == "0000" ]]
+  # type ldir
+  if [[ "$mode" == "0000" ]] && [[ "$type" == "ldir" ]]
   then
-    exec_mode "$root_path" "$mode"
-    exec_mode "$home_path" "$mode"
+    exec_mode "$root_path" "$mode" "$type"
+    return
+  fi
+  # type dir
+  if [[ "$mode" == "0000" ]] && [[ "$type" == "dir" ]]
+  then
+    exec_mode "$home_path" "$mode" "$type"
     return
   fi
 
@@ -332,39 +364,53 @@ exec_dir()
     then
       if [[ -e "$root_path" ]]
       then
-        echo -e "[E] (ldir)\tEXISTS NOT A DIRECTORY $root_path"
+        echo -e "[E] (dir)\tNOT A DIRECTORY PATH=$root_path TYPE=$type"
         return
       else
-        echo -e "[I] (ldir)\tCREATING $root_path"
+        echo -e "[I] (dir)\tCREATING PATH=$root_path TYPE=$type"
         mkdir -m "$mode" "$root_path"
       fi
     else
-      echo -e "[V] (ldir)\tOK $root_path"
+      echo -e "[V] (dir)\tOK PATH=$root_path TYPE=$type"
       # pass mode
-      exec_mode "$root_path" "$mode"
+      exec_mode "$root_path" "$mode" "$type"
     fi
   fi
 
   # type dir
   if [[ "$type" == "dir" ]]
   then
+    # check root
+    if [[ ! -d "$root_path" ]] && [[ "$link" != "no" ]]
+    then
+      if [[ -e "$root_path" ]]
+      then
+        echo -e "[E] (dir)\tNOT A DIRECTORY PATH=$root_path TYPE=$type"
+        return
+      else
+        echo -e "[E] (dir)\tNOT FOUND PATH=$root_path TYPE=$type"
+        return
+      fi
+    fi
+
+    # check home
     if [[ ! -d "$home_path" ]]
     then
       if [[ -e "$home_path" ]]
       then
-        echo -e "[E] (dir)\tEXISTS NOT A DIRECTORY $home_path"
+        echo -e "[E] (dir)\tNOT A DIRECTORY PATH=$home_path TYPE=$type"
         return
       fi
       # skip link
       if [[ "$link" == "no" ]]
       then
-        echo -e "[I] (dir)\tCREATING $home_path"
+        echo -e "[I] (dir)\tCREATING PATH=$home_path TYPE=$type"
         mkdir -m "$mode" "$home_path"
       fi
     else
-      echo -e "[V] (dir)\tOK $home_path"
+      echo -e "[V] (dir)\tOK PATH=$home_path TYPE=$type"
       # pass mode
-      exec_mode "$home_path" "$mode"
+      exec_mode "$home_path" "$mode" "$type"
     fi
   fi
 
@@ -390,10 +436,11 @@ exec_file()
 
   if [[ "$dothier_debug" == true ]]
   then
-    echo -e "[D] ($type)\tEXEC" \
+    echo -e "[D] (file)\tEXEC" \
           "ROOT=$root" \
           "HOME=$home" \
           "PATH=$path" \
+          "TYPE=$type" \
           "MODE=$mode" \
           "LINK=$link" \
           "TMEX=$tmex"
@@ -402,23 +449,24 @@ exec_file()
   # delete mode
   if [[ "$mode" == "0000" ]]
   then
-    exec_mode "$root_path" "$mode"
-    exec_mode "$home_path" "$mode"
+    exec_mode "$root_path" "$mode" "$type"
+    exec_mode "$home_path" "$mode" "$type"
     return
   fi
 
   # source file
   if [[ ! -f "$root_path" ]]
   then
-    echo -e "[W] ($type)\tNOT FOUND $root_path"
-    echo -e "[W] ($type)\tCREATING $root_path"
-    touch "$root_path"
+    echo -e "[E] (file)\tNOT FOUND PATH=$root_path TYPE=$type"
+    #echo -e "[W] (file)\tCREATING PATH=$root_path TYPE=$type"
+    #touch "$root_path"
+    return
   else
-    echo -e "[V] ($type)\tOK $root_path"
+    echo -e "[V] (file)\tOK PATH=$root_path TYPE=$type"
   fi
 
   # mode
-  exec_mode "$root_path" "$mode"
+  exec_mode "$root_path" "$mode" "$type"
 
   # pass link
   exec_link "$root" "$home" "$path" "$type" "$mode" "$link" "$tmex"
@@ -559,8 +607,8 @@ read_dothier()
   # create home
   if [[ ! -d "$dothier_home" ]]
   then
-    echo "[W] (read) HOME NOT FOUND $dothier_home"
-    echo "[W] (read) CREATING HOME $dothier_home"
+    echo -e "[W] (read)\tHOME NOT FOUND $dothier_home"
+    echo -e "[W] (read)\tCREATING HOME $dothier_home"
     mkdir -p "$dothier_home"
   fi
 
