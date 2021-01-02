@@ -434,7 +434,7 @@ exec_git()
     then
       if [[ "$gitpull" == "yes" ]]
       then
-        ( cd "$gitdst" && git pull -q )
+        ( cd "$gitdst" && git pull -q --depth "$gitdepth" )
       fi
     else
       ( git clone -q --depth "$gitdepth" "$giturl" "$gitdst" )
@@ -506,7 +506,7 @@ read_dothier()
   then
     if [[ -d "$dothier_root/.git" ]]
     then
-      ( cd "$dothier_root" && git pull )
+      ( cd "$dothier_root" && git pull -q --depth "${gitdepth:-$dothier_file_gitdepth}" )
     fi
   fi
 
