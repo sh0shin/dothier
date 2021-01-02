@@ -1,6 +1,6 @@
 # dothier
 
-Bash script to manage dotfiles hierarchy.
+Manage dotfiles hierarchy.
 
 ## Usage
 `TODO`
