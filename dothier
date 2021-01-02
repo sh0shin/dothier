@@ -661,7 +661,7 @@ read_dothier()
   then
     if [[ -d "$dothier_root/.git" ]]
     then
-      #( cd "$dothier_root" && git pull -q --depth "${gitdepth:-$dothier_file_gitdepth}" )
+      echo -e "${c_info}[I] (git)\tPULLING PATH=$dothier_root${c_none}"
       ( cd "$dothier_root" && git pull -q )
     fi
   fi
