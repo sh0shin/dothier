@@ -161,7 +161,8 @@ exec_mode()
         chmod "$mode" "$path"
       fi
     else
-      echo -e "[X] (mode)\tPATH=$path TYPE=$type"
+      # TODO
+      echo -e "[X] (mode)\tUNHANDLED LINK PATH=$path TYPE=$type"
     fi
   else
     if [[ "$dothier_verbose" == true ]]
