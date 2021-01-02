@@ -632,7 +632,6 @@ read_dothier()
   if [[ ! -e "$dothier_file" ]]
   then
     echo -e "${c_error}[E] (read) NOT FOUND $dothier_file${c_none}"
-    show_help
     return
   fi
 
