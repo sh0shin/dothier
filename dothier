@@ -8,11 +8,11 @@ readonly dothier_url="https://sh0shin.org/dothier"
 
 # default options
 # -D
-dothier_debug="no"
+dothier_debug=false
 # -g
 dothier_gitpull="no"
 # -r
-dothier_recursive="no"
+dothier_recursive=false
 # -v
 dothier_verbose="no"
 # -f file
@@ -29,6 +29,7 @@ dothier_home="$HOME"
 : "${dothier_file_gitpull:=no}"
 : "${dothier_file_gitdepth:=1}"
 : "${dothier_file_tmex:=0}"
+: "${dothier_file_touch:=0}"
 
 check_support()
 {
@@ -37,8 +38,8 @@ check_support()
       true
       ;;
     *)
-      echo "E: unsupported OS $OSTYPE"
-      exit
+      echo "[E] UNSUPPORTED OS $OSTYPE"
+      exit 1
       ;;
   esac
 } # check_support
@@ -56,7 +57,7 @@ show_help()
   echo "  -D      : Enable verbose debug output"
   echo "  -g      : Enable git pull (default: $dothier_gitpull)"
   echo "  -h      : Show this help"
-  echo "  -r      : Enabled recursive mode (default: $dothier_recursive)"
+  echo "  -r      : Enable recursive mode (default: $dothier_recursive)"
   echo "  -v      : Verbose output (default: $dothier_verbose)"
   echo "  -f file : The .hier file to use (default: $dothier_file)"
   echo "  -d dir  : Use directory for recursive mode (default: $dothier_dir)"
@@ -64,11 +65,11 @@ show_help()
   echo
 } # show_help
 
+# stat_mode <path>
 stat_mode()
 {
-  local path
+  local path="$1"
   local stat
-  path="${1:-/dev/null}"
 
   case "$OSTYPE" in
     darwin*|freebsd*|openbsd*)
@@ -79,33 +80,78 @@ stat_mode()
       ;;
   esac
   echo "$stat"
-} # stat_mode
+}
 
-change_mode()
+# exec_mode <path> <mode>
+exec_mode()
 {
-  local path
-  local mode
-  path="$1"
-  mode="$2"
+  local path="$1"
+  local mode="$2"
+  local _mode
 
-  case "$OSTYPE" in
-    darwin*|freebsd*|openbsd*)
-      chmod -h "$mode" "$path"
-      ;;
-    linux*)
-      # FIXME
-      [[ ! -L "$path" ]] && echo chmod "$mode" "$path"
-      ;;
-    esac
-} # change_mode
+  # debug
+  if [[ "$dothier_debug" == true ]]
+  then
+    echo -e "[D] (mode)\tEXEC" \
+          "PATH=$path" \
+          "MODE=$mode"
+  fi
 
-# exec_link <dothier_root> <dothier_home> <path> <type> <mode> <link> <tmex>
+  # delete mode
+  # TODO: change 0000 -> rm & rmr
+  if [[ "$mode" == "0000" ]]
+  then
+
+    # directory
+    if [[ -d "$path" ]]
+    then
+      echo -e "[I] (mode:dir)\tREMOVING $path"
+      echo rmdir "$path"
+
+    # file
+    elif [[ -f "$path" ]]
+    then
+      echo -e "[I] (mode:file)\tREMOVING $path"
+      echo "rm $path"
+    fi
+    return
+  fi
+
+  # check mode
+  _mode="$(stat_mode "$path")"
+  if [[ "$_mode" != "$mode" ]]
+  then
+    if [[ ! -L "$path" ]]
+    then
+
+      # directory
+      if [[ -d "$path" ]]
+      then
+        # TODO: warn dirmode <700
+        echo -e "[I] (mode:dir)\tCHANGING $_mode > $mode $path"
+        chmod "$mode" "$path"
+      fi
+
+      # file
+      if [[ -f "$path" ]]
+      then
+        # TODO: warn filemode >770
+        echo -e "[I] (mode:file)\tCHANGING $_mode > $mode $path"
+        chmod "$mode" "$path"
+      fi
+    else
+      echo -e "[X] (mode:link)\t$path"
+    fi
+  else
+    echo -e "[V] (mode)\tOK $mode $path"
+  fi
+}
+
+# exec_link <root> <home> <path> <type> <mode> <link> <tmex>
 exec_link()
 {
-  [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
-
-  local dothier_root="$1"
-  local dothier_home="$2"
+  local root="$1"
+  local home="$2"
 
   # dothier content
   local path="$3"
@@ -114,8 +160,34 @@ exec_link()
   local link="$6"
   local tmex="$7"
 
-  local src_path="$dothier_root/$path"
-  local dst_path="$dothier_home/$path"
+  local root_path="$root/$path"
+  local home_path="$home/$path"
+
+  if [[ "$dothier_debug" == true ]]
+  then
+    echo -e "[D] (link)\tEXEC" \
+          "ROOT=$root" \
+          "HOME=$home" \
+          "PATH=$path" \
+          "TYPE=$type" \
+          "MODE=$mode" \
+          "LINK=$link" \
+          "TMEX=$tmex"
+  fi
+
+  # ldir || lfile
+  if [[ "$type" == "ldir" ]] || [[ "$type" == "lfile" ]]
+  then
+    # unsupported link
+    if [[ "$link" == "yes" ]]
+    then
+      echo -e "[E] (link)\tTYPE $type UNSUPPORTED LINK=yes"
+      return
+    fi
+  fi
+
+  # devel
+  return
 
   # dir & file
   if [[ "$type" == "dir" ]] || [[ "$type" == "file" ]]
@@ -218,13 +290,11 @@ exec_link()
   exec_tmutil "$dst_path" "$tmex"
 }
 
-# exec_dir <dothier_root> <dothier_home> <path> <type> <mode> <link> <tmex>
+# exec_dir <root> <home> <path> <type> <mode> <link> <tmex>
 exec_dir()
 {
-  [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
-
-  local dothier_root="$1"
-  local dothier_home="$2"
+  local root="$1"
+  local home="$2"
 
   # dothier content
   local path="$3"
@@ -233,88 +303,80 @@ exec_dir()
   local link="$6"
   local tmex="$7"
 
-  local src_path="$dothier_root/$path"
-  local dst_path="$dothier_home/$path"
+  local root_path="$root/$path"
+  local home_path="$home/$path"
+
+  if [[ "$dothier_debug" == true ]]
+  then
+    echo -e "[D] ($type)\tEXEC" \
+          "ROOT=$root" \
+          "HOME=$home" \
+          "PATH=$path" \
+          "MODE=$mode" \
+          "LINK=$link" \
+          "TMEX=$tmex"
+  fi
 
   # delete mode
   if [[ "$mode" == "0000" ]]
   then
-
-    # source
-    if [[ -e "$src_path" ]]
-    then
-      rm -r "$src_path"
-
-      # local only
-      if [[ "$type" == "ldir" ]]
-      then
-        return
-      fi
-    fi
-
-    # destination
-    if [[ -e "$dst_path" ]]
-    then
-      rm -r "$dst_path"
-    fi
+    exec_mode "$root_path" "$mode"
+    exec_mode "$home_path" "$mode"
     return
   fi
 
-  # check source
-  if [[ ! -d "$src_path" ]]
+  # type ldir
+  if [[ "$type" == "ldir" ]]
   then
-    if [[ -e "$src_path" ]]
+    if [[ ! -d "$root_path" ]]
     then
-      echo "E: $src_path exists and is not a directory!"
-      return
-    fi
-    mkdir -m "$mode" "$src_path"
-  fi
-
-  # check mode
-  if [[ "$(stat_mode "$src_path")" != "$mode" ]]
-  then
-    change_mode "$src_path" "$mode"
-  fi
-
-  # destination
-  if [[ "$type" != "ldir" ]]
-  then
-
-    # check destination
-    if [[ ! -d "$dst_path" ]] \
-      && [[ "$link" == "no" ]]
-    then
-
-      # exists
-      if [[ -e "$dst_path" ]]
+      if [[ -e "$root_path" ]]
       then
-        echo "W: $dst_path exists!"
+        echo -e "[E] (ldir)\tEXISTS NOT A DIRECTORY $root_path"
+        return
+      else
+        echo -e "[I] (ldir)\tCREATING $root_path"
+        mkdir -m "$mode" "$root_path"
       fi
-      mkdir -m "$mode" "$dst_path"
+    else
+      echo -e "[V] (ldir)\tOK $root_path"
+      # pass mode
+      exec_mode "$root_path" "$mode"
     fi
-
-    # check mode
-    if [[ "$link" == "no" ]]
-    then
-      if [[ "$(stat_mode "$dst_path")" != "$mode" ]]
-      then
-        change_mode "$dst_path" "$mode"
-      fi
-    fi
-
-    # pass linking
-    exec_link "$dothier_root" "$dothier_home" "$path" "$type" "$mode" "$link" "$tmex"
   fi
+
+  # type dir
+  if [[ "$type" == "dir" ]]
+  then
+    if [[ ! -d "$home_path" ]]
+    then
+      if [[ -e "$home_path" ]]
+      then
+        echo -e "[E] (dir)\tEXISTS NOT A DIRECTORY $home_path"
+        return
+      fi
+      # skip link
+      if [[ "$link" == "no" ]]
+      then
+        echo -e "[I] (dir)\tCREATING $home_path"
+        mkdir -m "$mode" "$home_path"
+      fi
+    else
+      echo -e "[V] (dir)\tOK $home_path"
+      # pass mode
+      exec_mode "$home_path" "$mode"
+    fi
+  fi
+
+  # pass link
+  exec_link "$root" "$home" "$path" "$type" "$mode" "$link" "$tmex"
 }
 
-# exec_file <dothier_root> <dothier_home> <path> <type> <mode> <link> <tmex>
+# exec_file <root> <home> <path> <type> <mode> <link> <tmex>
 exec_file()
 {
-  [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
-
-  local dothier_root="$1"
-  local dothier_home="$2"
+  local root="$1"
+  local home="$2"
 
   # dothier content
   local path="$3"
@@ -323,51 +385,43 @@ exec_file()
   local link="$6"
   local tmex="$7"
 
-  local src_path="$dothier_root/$path"
-  local dst_path="$dothier_home/$path"
+  local root_path="$root/$path"
+  local home_path="$home/$path"
+
+  if [[ "$dothier_debug" == true ]]
+  then
+    echo -e "[D] ($type)\tEXEC" \
+          "ROOT=$root" \
+          "HOME=$home" \
+          "PATH=$path" \
+          "MODE=$mode" \
+          "LINK=$link" \
+          "TMEX=$tmex"
+  fi
 
   # delete mode
   if [[ "$mode" == "0000" ]]
   then
-
-    # source
-    if [[ -e "$src_path" ]]
-    then
-      rm "$src_path"
-
-      # local only
-      if [[ "$type" == "lfile" ]]
-      then
-        return
-      fi
-    fi
-
-    # destination
-    if [[ -e "$dst_path" ]]
-    then
-      rm "$dst_path"
-    fi
+    exec_mode "$root_path" "$mode"
+    exec_mode "$home_path" "$mode"
     return
   fi
 
-  # check source
-  if [[ ! -e "$src_path" ]]
+  # source file
+  if [[ ! -f "$root_path" ]]
   then
-    echo "E: $src_path not found!"
-    return
+    echo -e "[W] ($type)\tNOT FOUND $root_path"
+    echo -e "[W] ($type)\tCREATING $root_path"
+    touch "$root_path"
+  else
+    echo -e "[V] ($type)\tOK $root_path"
   fi
 
-  # check mode
-  if [[ "$(stat_mode "$src_path")" != "$mode" ]]
-  then
-    change_mode "$src_path" "$mode"
-  fi
+  # mode
+  exec_mode "$root_path" "$mode"
 
-  # pass linking
-  if [[ "$type" != "lfile" ]]
-  then
-    exec_link "$dothier_root" "$dothier_home" "$path" "$type" "$mode" "$link" "$tmex"
-  fi
+  # pass link
+  exec_link "$root" "$home" "$path" "$type" "$mode" "$link" "$tmex"
 }
 
 # exec_git <dothier_root> <dothier_home> <path> <type> <gitpull> <gitdepth>
@@ -494,11 +548,20 @@ read_dothier()
   dothier_home="$2"
   dothier_root="$(cd "$(dirname "$dothier_file")" && echo "$PWD")"
 
+  # dothier file
   if [[ ! -e "$dothier_file" ]]
   then
-    echo "E: file $dothier_file not found!"
+    echo "[E] (read) NOT FOUND $dothier_file"
     show_help
     return
+  fi
+
+  # create home
+  if [[ ! -d "$dothier_home" ]]
+  then
+    echo "[W] (read) HOME NOT FOUND $dothier_home"
+    echo "[W] (read) CREATING HOME $dothier_home"
+    mkdir -p "$dothier_home"
   fi
 
   # git pull (-g)
@@ -603,9 +666,8 @@ while getopts ":Dghrvf:d:H:" opt
 do
   case $opt in
     D)
-      dothier_debug="yes"
-      dothier_verbose="yes"
-      set -x
+      dothier_debug=true
+      dothier_verbose=true
       ;;
     g)
       dothier_gitpull="yes"
@@ -615,10 +677,10 @@ do
       exit 1
       ;;
     r)
-      dothier_recursive="yes"
+      dothier_recursive=true
       ;;
     v)
-      dothier_verbose="yes"
+      dothier_verbose=true
       ;;
     f)
       dothier_file="$OPTARG"
@@ -654,7 +716,7 @@ then
 fi
 
 # main
-if [[ "$dothier_recursive" == "yes" ]]
+if [[ "$dothier_recursive" == true ]]
 then
   read_dothier_recursive "$dothier_file" "$dothier_home" "$dothier_dir"
 else
