@@ -21,4 +21,4 @@ dothier                       lfile 0750
 .ssh                          dir   0700
 
 # git sources                 type  pull  depth
-.git_src                      git   yes   1
+.gitsrc                       git   yes   1
