@@ -39,6 +39,8 @@ c_debug='\033[0;34m'
 c_recursive='\033[1;33m'
 c_error='\033[0;31m'
 c_warning='\033[0;33m'
+
+c_todo='\033[0;36m'
 c_none='\033[0m'
 
 # dothier file defaults
@@ -161,8 +163,8 @@ exec_mode()
         chmod "$mode" "$path"
       fi
     else
-      # TODO
-      echo -e "[X] (mode)\tUNHANDLED LINK PATH=$path TYPE=$type"
+      # TODO: handle links
+      echo -e "${c_todo}[T] (mode)\tUNHANDLED LINK PATH=$path TYPE=$type${c_none}"
     fi
   else
     if [[ "$dothier_verbose" == true ]]
