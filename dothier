@@ -14,13 +14,32 @@ dothier_gitpull="no"
 # -r
 dothier_recursive=false
 # -v
-dothier_verbose="no"
+dothier_verbose=false
 # -f file
 dothier_file=".hier"
 # -d dir
 dothier_dir="$HOME/.dotfiles"
 # -H home
 dothier_home="$HOME"
+
+# dothier colors
+#  Black        0;30     Dark Gray     1;30
+#  Red          0;31     Light Red     1;31
+#  Green        0;32     Light Green   1;32
+#  Brown/Orange 0;33     Yellow        1;33
+#  Blue         0;34     Light Blue    1;34
+#  Purple       0;35     Light Purple  1;35
+#  Cyan         0;36     Light Cyan    1;36
+#  Light Gray   0;37     White         1;37
+
+c_debug='\033[0;34m'
+c_verbose='\033[0;37m'
+
+c_error='\033[0;31m'
+c_warning='\033[0;33m'
+c_recursive='\033[1;33m'
+
+c_none='\033[0m'
 
 # dothier file defaults
 : "${dothier_file_dirmode:=0755}"
@@ -38,7 +57,7 @@ check_support()
       true
       ;;
     *)
-      echo "[E] UNSUPPORTED OS $OSTYPE"
+      echo -e "${c_error}[E] UNSUPPORTED OS $OSTYPE{$c_none}"
       exit 1
       ;;
   esac
@@ -93,10 +112,10 @@ exec_mode()
   # debug
   if [[ "$dothier_debug" == true ]]
   then
-    echo -e "[D] (mode)\tEXEC" \
+    echo -e "${c_debug}[D] (mode)\tEXEC" \
           "PATH=$path" \
           "MODE=$mode" \
-          "TYPE=$type"
+          "TYPE=$type${c_none}"
   fi
 
   # delete mode
@@ -145,7 +164,10 @@ exec_mode()
       echo -e "[X] (mode)\tPATH=$path TYPE=$type"
     fi
   else
-    echo -e "[V] (mode)\tOK MODE=$mode PATH=$path TYPE=$type"
+    if [[ "$dothier_verbose" == true ]]
+    then
+      echo -e "${c_verbose}[V] (mode)\tOK MODE=$mode PATH=$path TYPE=$type${c_none}"
+    fi
   fi
 }
 
@@ -167,15 +189,18 @@ exec_link()
 
   if [[ "$dothier_debug" == true ]]
   then
-    echo -e "[D] (link)\tEXEC" \
+    echo -e "${c_debug}[D] (link)\tEXEC" \
           "ROOT=$root" \
           "HOME=$home" \
           "PATH=$path" \
           "TYPE=$type" \
           "MODE=$mode" \
           "LINK=$link" \
-          "TMEX=$tmex"
+          "TMEX=$tmex${c_none}"
   fi
+
+  # delete mode
+  # TODO
 
   # ldir || lfile
   if [[ "$type" == "ldir" ]] || [[ "$type" == "lfile" ]]
@@ -183,26 +208,27 @@ exec_link()
     # unsupported link
     if [[ "$link" == "yes" ]] || [[ "$link" != "no" ]]
     then
-      echo -e "[W] (link)\tUNSUPPORTED TYPE=$type LINK=$link"
+      echo -e "${c_warning}[W] (link)\tUNSUPPORTED TYPE=$type LINK=$link${c_none}"
       return
     else
       # skip
       if [[ "$dothier_debug" == true ]]
       then
-        echo -e "[D] (link)\tSKIPPING TYPE=$type"
+        echo -e "${c_debug}[D] (link)\tSKIPPING TYPE=$type${c_none}"
       fi
       return
     fi
   fi
 
   # type dir || file
-  if [[ "$type" == "dir" ]] || [[ "$type" == "lfile" ]]
+  if [[ "$type" == "dir" ]] || [[ "$type" == "file" ]]
   then
-    echo -e "[D] (link)\tDOING TYPE=$type"
-
     if [[ "$link" != "yes" ]] && [[ "$link" != "no" ]]
     then
-      echo -e "[D] (link)\tSETTING $home/$link"
+      if [[ "$dothier_debug" == true ]]
+      then
+        echo -e "${c_debug}[D] (link)\tSETTING HOME=$home/$link${c_none}"
+      fi
       home_path="$home/$link"
     fi
   fi
@@ -210,8 +236,6 @@ exec_link()
   # type link
   if [[ "$type" == "link" ]]
   then
-    echo -e "[D] (link)\tDOING TYPE=$type"
-
     if [[ "$link" != "yes" ]] && [[ "$link" != "no" ]]
     then
 
@@ -229,90 +253,63 @@ exec_link()
   # check source
   if [[ ! -e "$root_path" ]] && [[ "$link" != "no" ]]
   then
-    echo -e "[E] (link)\tUNREADABLE TYPE=$type $root_path LINK=$link"
+    echo -e "${c_error}[E] (link)\tUNREADABLE TYPE=$type $root_path LINK=$link${c_none}"
     return 1
   fi
 
   # check & clean destination
+  # remove dir
   if [[ ! -L "$home_path" ]] && [[ -d "$home_path" ]] && [[ "$type" != "dir" ]]
   then
-    echo -e "[I] (link)\tREMOVING DIRECTORY $home_path"
+    echo -e "[I] (link)\tREMOVING DIRECTORY PATH=$home_path TYPE=$type"
     echo "rm -r $home_path"
   fi
 
-
-  # devel
-  return
-
-  # check source
-  if [[ ! -e "$src_path" ]]
-  then
-    echo "E: $src_path not readable!"
-    return
-  fi
-
-  # check destination
-  # remove dir
-  if [[ ! -L "$dst_path" ]] \
-    && [[ -d "$dst_path" ]] \
-    && [[ "$type" != "dir" ]]
-  then
-    rm -r "$dst_path"
-  fi
-
   # remove file
-  if [[ ! -L "$dst_path" ]] \
-    && [[ -f "$dst_path" ]] \
-    && [[ "$type" != "file" ]]
+  if [[ ! -L "$home_path" ]] && [[ -f "$home_path" ]] && [[ "$type" != "file" ]]
   then
-    rm "$dst_path"
+    echo -e "[I] (link)\tREMOVING FILE PATH=$home_path TYPE=$type"
+    echo "rm $home_path"
   fi
 
   # wrong link
-  if [[ "$(readlink "$dst_path")" != "$src_path" ]] \
-    && [[ "$link" != "no" ]]
+  local _readlink
+  _readlink="$(readlink "$home_path")"
+  if [[ -n "$_readlink" ]]
   then
-
-    # remove dir
-    if [[ -d "$dst_path" ]]
+    # remove
+    if [[ "$(readlink "$home_path")" != "$root_path" ]] && [[ "$link" != "no" ]]
     then
-      rm -r "$dst_path"
-
-    # remove file
-    else
-      rm -f "$dst_path"
+      echo -e "[I] (link)\tREMOVING WRONG LINK=$_readlink -> $home_path TYPE=$type"
+      echo rm -rf "$home_path"
     fi
   fi
 
-  # remove no link
-  if [[ -L "$dst_path" ]] \
-    && [[ "$link" == "no" ]]
+  # no link
+  if [[ -L "$home_path" ]] && [[ "$link" == "no" ]]
   then
-    rm "$dst_path"
+    echo -e "[I] (link)\t REMOVING LINK=$home_path TYPE=$type"
+    echo rm "$home_path"
     return
-  fi
-
-  # delete mode
-  if [[ "$mode" == "0000" ]]
-  then
-    if [[ -L "$dst_path" ]]
-    then
-      echo rm "$dst_path"
-      return
-    fi
   fi
 
   # create link
   if [[ "$link" != "no" ]]
   then
-    if [[ ! -L "$dst_path" ]]
+    if [[ ! -L "$home_path" ]] && [[ "$link" != "no" ]]
     then
-      ln -s "$src_path" "$dst_path"
+      echo -e "[I] (link)\tCREATING LINK=$root_path -> $home_path TYPE=$type"
+      ln -s "$root_path" "$home_path"
+    else
+      if [[ "$dothier_verbose" == true ]]
+      then
+        echo -e "${c_verbose}[V] (link)\tOK LINK=$root_path -> $home_path TYPE=$type${c_none}"
+      fi
     fi
   fi
 
   # pass tmutil
-  exec_tmutil "$dst_path" "$tmex"
+  exec_tmutil "$home_path" "$tmex" "$type"
 }
 
 # exec_dir <root> <home> <path> <type> <mode> <link> <tmex>
@@ -333,14 +330,14 @@ exec_dir()
 
   if [[ "$dothier_debug" == true ]]
   then
-    echo -e "[D] (dir)\tEXEC" \
+    echo -e "${c_debug}[D] (dir)\tEXEC" \
           "ROOT=$root" \
           "HOME=$home" \
           "PATH=$path" \
           "TYPE=$type" \
           "MODE=$mode" \
           "LINK=$link" \
-          "TMEX=$tmex"
+          "TMEX=$tmex${c_none}"
   fi
 
   # delete mode
@@ -364,14 +361,17 @@ exec_dir()
     then
       if [[ -e "$root_path" ]]
       then
-        echo -e "[E] (dir)\tNOT A DIRECTORY PATH=$root_path TYPE=$type"
+        echo -e "${c_error}[E] (dir)\tNOT A DIRECTORY PATH=$root_path TYPE=$type${c_none}"
         return
       else
         echo -e "[I] (dir)\tCREATING PATH=$root_path TYPE=$type"
         mkdir -m "$mode" "$root_path"
       fi
     else
-      echo -e "[V] (dir)\tOK PATH=$root_path TYPE=$type"
+      if [[ "$dothier_verbose" == true ]]
+      then
+        echo -e "${c_verbose}[V] (dir)\tOK PATH=$root_path TYPE=$type${c_none}"
+      fi
       # pass mode
       exec_mode "$root_path" "$mode" "$type"
     fi
@@ -385,10 +385,10 @@ exec_dir()
     then
       if [[ -e "$root_path" ]]
       then
-        echo -e "[E] (dir)\tNOT A DIRECTORY PATH=$root_path TYPE=$type"
+        echo -e "${c_error}[E] (dir)\tNOT A DIRECTORY PATH=$root_path TYPE=$type${c_none}"
         return
       else
-        echo -e "[E] (dir)\tNOT FOUND PATH=$root_path TYPE=$type"
+        echo -e "${c_error}[E] (dir)\tNOT FOUND PATH=$root_path TYPE=$type${c_none}"
         return
       fi
     fi
@@ -398,7 +398,7 @@ exec_dir()
     then
       if [[ -e "$home_path" ]]
       then
-        echo -e "[E] (dir)\tNOT A DIRECTORY PATH=$home_path TYPE=$type"
+        echo -e "${c_error}[E] (dir)\tNOT A DIRECTORY PATH=$home_path TYPE=$type${c_none}"
         return
       fi
       # skip link
@@ -408,7 +408,10 @@ exec_dir()
         mkdir -m "$mode" "$home_path"
       fi
     else
-      echo -e "[V] (dir)\tOK PATH=$home_path TYPE=$type"
+      if [[ "$dothier_verbose" == true ]]
+      then
+        echo -e "${c_verbose}[V] (dir)\tOK PATH=$home_path TYPE=$type${c_none}"
+      fi
       # pass mode
       exec_mode "$home_path" "$mode" "$type"
     fi
@@ -436,14 +439,14 @@ exec_file()
 
   if [[ "$dothier_debug" == true ]]
   then
-    echo -e "[D] (file)\tEXEC" \
+    echo -e "${c_debug}[D] (file)\tEXEC" \
           "ROOT=$root" \
           "HOME=$home" \
           "PATH=$path" \
           "TYPE=$type" \
           "MODE=$mode" \
           "LINK=$link" \
-          "TMEX=$tmex"
+          "TMEX=$tmex${c_none}"
   fi
 
   # delete mode
@@ -457,12 +460,15 @@ exec_file()
   # source file
   if [[ ! -f "$root_path" ]]
   then
-    echo -e "[E] (file)\tNOT FOUND PATH=$root_path TYPE=$type"
+    echo -e "${c_error}[E] (file)\tNOT FOUND PATH=$root_path TYPE=$type${c_none}"
     #echo -e "[W] (file)\tCREATING PATH=$root_path TYPE=$type"
     #touch "$root_path"
     return
   else
-    echo -e "[V] (file)\tOK PATH=$root_path TYPE=$type"
+    if [[ "$dothier_verbose" == true ]]
+    then
+      echo -e "${c_verbose}[V] (file)\tOK PATH=$root_path TYPE=$type${c_none}"
+    fi
   fi
 
   # mode
@@ -472,27 +478,37 @@ exec_file()
   exec_link "$root" "$home" "$path" "$type" "$mode" "$link" "$tmex"
 }
 
-# exec_git <dothier_root> <dothier_home> <path> <type> <gitpull> <gitdepth>
+# exec_git <root> <home> <path> <type> <gitpull> <gitdepth>
 exec_git()
 {
-  [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
-
-  local dothier_root="$1"
-  local dothier_home="$2"
+  local root="$1"
+  local home="$2"
 
   local path="$3"
   local type="$4"
   local gitpull="$5"
   local gitdepth="$6"
 
-  local src_path="$dothier_root/$path"
-  local dst_path
+  local root_path="$dothier_root/$path"
+  local home_path
 
   if [[ "$type" == "lgit" ]]
   then
-    dst_path="$(dirname "$dothier_root/$path")"
+    home_path="$(dirname "$root/$path")"
   else
-    dst_path="$(dirname "$dothier_home/$path")"
+    home_path="$(dirname "$home/$path")"
+  fi
+
+  if [[ "$dothier_debug" == true ]]
+  then
+    echo -e "${c_debug}[D] (git)\tEXEC" \
+          "ROOT=$root" \
+          "HOME=$home" \
+          "PATH=$path" \
+          "TYPE=$type" \
+          "PULL=$gitpull" \
+          "DEPTH=$gitdepth" \
+          "TMEX=$tmex${c_none}"
   fi
 
   local giturl gitname gitdir
@@ -519,33 +535,33 @@ exec_git()
       then
         gitdst="$gitdst"
       else
-        gitdst="$dst_path/$gitdst"
+        gitdst="$home_path/$gitdst"
       fi
     else
-      gitdst="$dst_path/$gitdir"
+      gitdst="$home_path/$gitdir"
     fi
 
-    if [[ "$dothier_verbose" == "yes" ]]
+    if [[ "$dothier_verbose" == true ]]
     then
-      echo " : git: $gitdst ($giturl)"
-    else
-      echo " : git: $gitdst"
+      echo -e "${c_verbose}[V] (git)\tURL=$giturl PATH=$gitdst${c_none}"
     fi
 
     if [[ -d "$gitdst" ]]
     then
       if [[ "$gitpull" == "yes" ]]
       then
+        echo -e "[I] (git)\tPULLING PATH=$gitdst"
         ( cd "$gitdst" && git pull -q --depth "$gitdepth" )
       fi
     else
+      echo -e "[I] (git)\tCLONING URL=$giturl PATH=$gitdst"
       ( git clone -q --depth "$gitdepth" "$giturl" "$gitdst" )
     fi
 
     # pass tmutil
-    exec_tmutil "$gitdst" "$tmex"
+    exec_tmutil "$gitdst" "$tmex" "$type"
 
-  done < "$src_path"
+  done < "$root_path"
   unset IFS
 }
 
@@ -553,17 +569,24 @@ exec_git()
 exec_tmutil()
 {
   [[ "$OSTYPE" != darwin* ]] && return
-  [[ "$dothier_verbose" == "yes" ]] && echo "${FUNCNAME[0]}" "$@"
 
   local path="$1"
   local tmex="$2"
+
+  if [[ "$dothier_debug" == true ]]
+  then
+    echo -e "${c_debug}[D] (tmutil)\tEXEC" \
+          "PATH=$path" \
+          "TMEX=$tmex" \
+          "TYPE=$type${c_none}"
+  fi
 
   # destination
   if [[ -e "$path" ]]
   then
     if [[ -L "$path" ]] && [[ "$tmex" -eq 1 ]]
     then
-      echo "  : tmutil: is link $path"
+      echo -e "${c_error}[E] (tmutil)\tUNSUPPORTED LINK PATH=$path${c_none}"
       return
     fi
 
@@ -571,13 +594,18 @@ exec_tmutil()
     then
       if [[ "$tmex" -eq  0 ]]
       then
-        echo " : tmutil: include $path"
+        echo -e "[I] (tmutil)\tINCLUDING PATH=$path"
         tmutil removeexclusion "$path"
+      else
+        if [[ "$dothier_verbose" == true ]]
+        then
+          echo -e "${c_verbose}[V] (tmutil)\tOK PATH=$path${c_none}"
+        fi
       fi
     else
       if [[ "$tmex" -eq 1 ]]
       then
-        echo " : tmutil: exclude $path"
+        echo -e "[I] (tmutil)\tEXCLUDING PATH=$path"
         tmutil addexclusion "$path"
       fi
     fi
@@ -599,7 +627,7 @@ read_dothier()
   # dothier file
   if [[ ! -e "$dothier_file" ]]
   then
-    echo "[E] (read) NOT FOUND $dothier_file"
+    echo "${c_error}[E] (read) NOT FOUND $dothier_file${c_none}"
     show_help
     return
   fi
@@ -607,8 +635,8 @@ read_dothier()
   # create home
   if [[ ! -d "$dothier_home" ]]
   then
-    echo -e "[W] (read)\tHOME NOT FOUND $dothier_home"
-    echo -e "[W] (read)\tCREATING HOME $dothier_home"
+    echo -e "${c_warning}[W] (read)\tHOME NOT FOUND $dothier_home${c_none}"
+    echo -e "${c_warning}[W] (read)\tCREATING HOME $dothier_home${c_none}"
     mkdir -p "$dothier_home"
   fi
 
@@ -700,8 +728,8 @@ read_dothier_recursive()
 
   for dothier_found_for in $dothier_found
   do
-    dothier_found_dirname="$(basename "$(dirname "$dothier_found_for")")"
-    echo ": $dothier_found_dirname"
+    dothier_found_dirname="$(dirname "$dothier_found_for")"
+    echo -e "${c_recursive}[R] (dothier)\tPATH=$dothier_found_dirname${c_none}"
     read_dothier "$dothier_found_for" "$dothier_home"
   done
 }
