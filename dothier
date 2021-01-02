@@ -555,7 +555,8 @@ exec_git()
       if [[ "$gitpull" == "yes" ]]
       then
         echo -e "${c_info}[I] (git)\tPULLING PATH=$gitdst${c_none}"
-        ( cd "$gitdst" && git pull -q --depth "$gitdepth" )
+        #( cd "$gitdst" && git pull -q --depth "$gitdepth" )
+        ( cd "$gitdst" && git pull -q )
       fi
     else
       echo -e "${c_info}[I] (git)\tCLONING URL=$giturl PATH=$gitdst${c_none}"
@@ -648,7 +649,8 @@ read_dothier()
   then
     if [[ -d "$dothier_root/.git" ]]
     then
-      ( cd "$dothier_root" && git pull -q --depth "${gitdepth:-$dothier_file_gitdepth}" )
+      #( cd "$dothier_root" && git pull -q --depth "${gitdepth:-$dothier_file_gitdepth}" )
+      ( cd "$dothier_root" && git pull -q )
     fi
   fi
 
