@@ -170,7 +170,7 @@ exec_mode()
 
       if [[ "$_mode" != "$mode" ]]
       then
-        echo -e "${c_info}[I] (mode)\tCHANGING MODE=$_mode -> $mode PATH=$_readlink TYPE=$type${c_none}"
+        echo -e "${c_info}[I] (mode)\tCHANGING MODE=$_mode > $mode PATH=$_readlink TYPE=$type${c_none}"
         chmod "$mode" "$_readlink"
       else
         if [[ "$dothier_verbose" == true ]]
