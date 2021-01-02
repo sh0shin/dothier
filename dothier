@@ -520,9 +520,6 @@ read_dothier()
       continue
     fi
 
-    # default link
-    link="${link:-$dothier_file_link}"
-
     # tmutil exclusion
     tmex="${dothier_file_tmex}"
     if [[ "$mode" =~ ^@ ]]
@@ -558,6 +555,9 @@ read_dothier()
         return
         ;;
     esac
+
+    # default link
+    link="${link:-$dothier_file_link}"
 
     if [[ "$(type -t "$dothier_exec")" == "function" ]]
     then
