@@ -110,6 +110,7 @@ exec_mode()
   local mode="$2"
   local type="$3"
   local _mode
+  local _readlink
 
   # debug
   if [[ "$dothier_debug" == true ]]
@@ -163,9 +164,20 @@ exec_mode()
         chmod "$mode" "$path"
       fi
     else
-      # TODO: handle links
-      #echo -e "${c_todo}[T] (mode)\tUNHANDLED LINK PATH=$path TYPE=$type${c_none}"
-      return
+      # linked directory
+      _readlink="$(readlink "$path")"
+      _mode="$(stat_mode "$_readlink")"
+
+      if [[ "$_mode" != "$mode" ]]
+      then
+        echo -e "${c_info}[I] (mode)\tCHANGING MODE=$_mode -> $mode PATH=$_readlink TYPE=$type${c_none}"
+        chmod "$mode" "$_readlink"
+      else
+        if [[ "$dothier_verbose" == true ]]
+        then
+          echo -e "${c_verbose}[V] (mode)\tOK MODE=$mode PATH=$_readlink TYPE=$type${c_none}"
+        fi
+      fi
     fi
   else
     if [[ "$dothier_verbose" == true ]]
