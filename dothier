@@ -3,7 +3,7 @@
 
 # self, version, url
 readonly dothier_self="$(basename "$0")"
-readonly dothier_version="v0.1.0-beta.4"
+readonly dothier_version="v0.1.0-beta.5"
 readonly dothier_url="https://sh0shin.org/dothier"
 
 # default options
@@ -32,13 +32,13 @@ dothier_home="$HOME"
 #  Cyan         0;36     Light Cyan    1;36
 #  Light Gray   0;37     White         1;37
 
-c_debug='\033[0;34m'
+c_info='\033[0;32m'
 c_verbose='\033[0;37m'
+c_debug='\033[0;34m'
 
+c_recursive='\033[1;33m'
 c_error='\033[0;31m'
 c_warning='\033[0;33m'
-c_recursive='\033[1;33m'
-
 c_none='\033[0m'
 
 # dothier file defaults
@@ -126,13 +126,13 @@ exec_mode()
     # directory
     if [[ -d "$path" ]]
     then
-      echo -e "[I] (mode)\tREMOVING PATH=$path TYPE=$type"
+      echo -e "${c_info}[I] (mode)\tREMOVING PATH=$path TYPE=$type${c_none}"
       rmdir "$path"
 
     # file
     elif [[ -f "$path" ]]
     then
-      echo -e "[I] (mode)\tREMOVING PATH=$path TYPE=$type"
+      echo -e "${c_info}[I] (mode)\tREMOVING PATH=$path TYPE=$type${c_none}"
       rm "$path"
     fi
     return
@@ -149,7 +149,7 @@ exec_mode()
       if [[ -d "$path" ]]
       then
         # TODO: warn dirmode <700
-        echo -e "[I] (mode)\tCHANGING MODE=$_mode > $mode PATH=$path TYPE=$type"
+        echo -e "${c_info}[I] (mode)\tCHANGING MODE=$_mode > $mode PATH=$path TYPE=$type${c_none}"
         chmod "$mode" "$path"
       fi
 
@@ -157,7 +157,7 @@ exec_mode()
       if [[ -f "$path" ]]
       then
         # TODO: warn filemode >770
-        echo -e "[I] (mode)\tCHANGING MODE=$_mode > $mode PATH=$path TYPE=$type"
+        echo -e "${c_info}[I] (mode)\tCHANGING MODE=$_mode > $mode PATH=$path TYPE=$type${c_none}"
         chmod "$mode" "$path"
       fi
     else
@@ -262,14 +262,14 @@ exec_link()
   # remove dir
   if [[ ! -L "$home_path" ]] && [[ -d "$home_path" ]] && [[ "$type" != "dir" ]]
   then
-    echo -e "[I] (link)\tREMOVING DIRECTORY PATH=$home_path TYPE=$type"
+    echo -e "${c_info}[I] (link)\tREMOVING DIRECTORY PATH=$home_path TYPE=$type${c_none}"
     echo "rm -r $home_path"
   fi
 
   # remove file
   if [[ ! -L "$home_path" ]] && [[ -f "$home_path" ]] && [[ "$type" != "file" ]]
   then
-    echo -e "[I] (link)\tREMOVING FILE PATH=$home_path TYPE=$type"
+    echo -e "${c_info}[I] (link)\tREMOVING FILE PATH=$home_path TYPE=$type${c_none}"
     echo "rm $home_path"
   fi
 
@@ -281,7 +281,7 @@ exec_link()
     # remove
     if [[ "$(readlink "$home_path")" != "$root_path" ]] && [[ "$link" != "no" ]]
     then
-      echo -e "[I] (link)\tREMOVING WRONG LINK=$_readlink -> $home_path TYPE=$type"
+      echo -e "${c_info}[I] (link)\tREMOVING WRONG LINK=$_readlink -> $home_path TYPE=$type${c_none}"
       echo rm -rf "$home_path"
     fi
   fi
@@ -289,7 +289,7 @@ exec_link()
   # no link
   if [[ -L "$home_path" ]] && [[ "$link" == "no" ]]
   then
-    echo -e "[I] (link)\t REMOVING LINK=$home_path TYPE=$type"
+    echo -e "${c_info}[I] (link)\t REMOVING LINK=$home_path TYPE=$type${c_none}"
     echo rm "$home_path"
     return
   fi
@@ -299,7 +299,7 @@ exec_link()
   then
     if [[ ! -L "$home_path" ]] && [[ "$link" != "no" ]]
     then
-      echo -e "[I] (link)\tCREATING LINK=$root_path -> $home_path TYPE=$type"
+      echo -e "${c_info}[I] (link)\tCREATING LINK=$root_path -> $home_path TYPE=$type${c_none}"
       ln -s "$root_path" "$home_path"
     else
       if [[ "$dothier_verbose" == true ]]
@@ -365,7 +365,7 @@ exec_dir()
         echo -e "${c_error}[E] (dir)\tNOT A DIRECTORY PATH=$root_path TYPE=$type${c_none}"
         return
       else
-        echo -e "[I] (dir)\tCREATING PATH=$root_path TYPE=$type"
+        echo -e "${c_info}[I] (dir)\tCREATING PATH=$root_path TYPE=$type${c_none}"
         mkdir -m "$mode" "$root_path"
       fi
     else
@@ -405,7 +405,7 @@ exec_dir()
       # skip link
       if [[ "$link" == "no" ]]
       then
-        echo -e "[I] (dir)\tCREATING PATH=$home_path TYPE=$type"
+        echo -e "${c_info}[I] (dir)\tCREATING PATH=$home_path TYPE=$type${c_none}"
         mkdir -m "$mode" "$home_path"
       fi
     else
@@ -551,11 +551,11 @@ exec_git()
     then
       if [[ "$gitpull" == "yes" ]]
       then
-        echo -e "[I] (git)\tPULLING PATH=$gitdst"
+        echo -e "${c_info}[I] (git)\tPULLING PATH=$gitdst${c_none}"
         ( cd "$gitdst" && git pull -q --depth "$gitdepth" )
       fi
     else
-      echo -e "[I] (git)\tCLONING URL=$giturl PATH=$gitdst"
+      echo -e "${c_info}[I] (git)\tCLONING URL=$giturl PATH=$gitdst${c_none}"
       ( git clone -q --depth "$gitdepth" "$giturl" "$gitdst" )
     fi
 
@@ -595,7 +595,7 @@ exec_tmutil()
     then
       if [[ "$tmex" -eq  0 ]]
       then
-        echo -e "[I] (tmutil)\tINCLUDING PATH=$path"
+        echo -e "${c_info}[I] (tmutil)\tINCLUDING PATH=$path${c_none}"
         tmutil removeexclusion "$path"
       else
         if [[ "$dothier_verbose" == true ]]
@@ -606,7 +606,7 @@ exec_tmutil()
     else
       if [[ "$tmex" -eq 1 ]]
       then
-        echo -e "[I] (tmutil)\tEXCLUDING PATH=$path"
+        echo -e "${c_info}[I] (tmutil)\tEXCLUDING PATH=$path${c_none}"
         tmutil addexclusion "$path"
       fi
     fi
