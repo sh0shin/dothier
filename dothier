@@ -567,7 +567,6 @@ exec_git()
       if [[ "$gitpull" == "yes" ]]
       then
         echo -e "${c_info}[I] (git)\tPULLING PATH=$gitdst${c_none}"
-        #( cd "$gitdst" && git pull -q --depth "$gitdepth" )
         ( cd "$gitdst" && git pull -q )
       fi
     else
