@@ -63,7 +63,7 @@ dothier_home="$HOME"
 #  Light Gray   0;37     White         1;37
 
 c_info='\033[0;36m'
-c_verbose='\033[1;32m'
+c_verbose='\033[1;36m'
 c_gitverbose='\033[1;35m'
 c_debug='\033[1;34m'
 
