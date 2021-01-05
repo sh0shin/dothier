@@ -39,3 +39,10 @@ dothier                       lfile 0750
 # just rests within the ~/.dotfiles (mode will be enforced)
 .screenrc                     file  0640
 # more...
+
+# git repositories
+#                             type  pull  depth
+# clone/pull git repositories to/from ~/.dotfiles/<name>
+.lgitsrc                      lgit  yes # depth default: 1
+# clone/pull git repositories to/from ~/<name>
+.gitsrc                       git   yes   1
