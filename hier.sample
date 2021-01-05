@@ -1,24 +1,41 @@
-# dothier
+# (dot).hier
 
-# l(local) dir                type  mode
+# the local repository directory itself (~/.dotfiles)
+#                             type  mode
 .                             ldir  0700
 
-# l(ocal) file                type  mode
+# local files within the repository directory
+#                             type  mode
 .editorconfig                 lfile 0640
 .gitignore                    lfile 0640
 LICENSE                       lfile 0640
 README.md                     lfile 0640
 dothier                       lfile 0750
 
-# link                        type  mode  source
-.bash_profile                 link  0640  .profile
-.bashrc                       link  0640  .profile
+# dotfiles collection (not shipped ;)
+#                             type  mode  link
+# link ~/.dotfiles/.profile to ~/.profile
+.profile                      file  0600  yes  # link default: no
 
-# file                        type  mode  link
-.profile                      file  0640  yes
+# linking the .profile file
+#                             type  mode  source
+# link ~/.dotfiles/.profile to ~/.bash_profile
+.bash_profile                 link  0600  .profile
+# link ~/.profile to ~/.bashrc
+.bashrc                       link  0600  ~/.profile
 
-# dir                         type  mode  link
+# more dotfiles (mode will be enforced)
+#                             type  mode  link
+# link ~/.dotfiles/.gnupg to ~/.gnupg
+.gnupg                        dir   0700  yes
+# creates ~/.ssh (no link)
 .ssh                          dir   0700
-
-# git sources                 type  pull  depth
-.gitsrc                       git   yes   1
+# link ~/.dotfiles/.ssh/id_ed25519 to ~/.ssh/id_ed25519
+.ssh/id_ed25519               file  0600  yes
+# link ~/.dotfiles/.ssh/id_ed25519.pub to ~/.ssh/id_ed25519.pub
+.ssh/id_ed25519.pub           file  0644  yes
+# link ~/.dotfiles/.vimrc -> ~/.vimrc
+.vimrc                        file  0640  yes
+# just rests within the ~/.dotfiles (mode will be enforced)
+.screenrc                     file  0640
+# more...
