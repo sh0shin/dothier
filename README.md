@@ -1,6 +1,21 @@
 # dothier
+Manage dotfiles hierarchy.  
+Keep all your dotfiles in a git repository and deploy it with one simple
+command `dothier`.
 
-Manage dotfiles hierarchy.
+## Installation
+The only supported package manger for now is [homebrew](https://brew.sh)
+```sh
+brew tap sh0shin/tap
+brew install sh0shin/tap/dothier
+```
+
+Or simply clone the git repository, it's just a bash script 8)
+```sh
+git clone https://github.com/sh0shin/dothier.git
+cp dothier/dothier /usr/local/bin
+chmod 0755 /usr/local/bin/dothier
+```
 
 ## Usage
 ```
@@ -16,6 +31,7 @@ Options:
   -d dir  : Use directory for recursive mode (default: /your-homedir/.dotfiles)
   -H home : Home directory (default: /your-homedir)
 ```
+
 ### The `.hier` file
 ```sh
 # (dot).hier
