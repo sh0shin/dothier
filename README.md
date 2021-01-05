@@ -1,7 +1,7 @@
 # dothier
 Manage dotfiles hierarchy.  
-Keep all your dotfiles in a git repository and deploy it with one simple
-command `dothier`.
+Keep all your dotfiles in a git repository and deploy them with one simple
+command `dothier`...
 
 ## Installation
 The only supported package manger for now is [homebrew](https://brew.sh)
