@@ -34,21 +34,30 @@ dothier                       lfile 0750
 
 # dotfiles collection (not shipped ;)
 #                             type  mode  link
+# link ~/.dotfiles/.profile to ~/.profile
 .profile                      file  0600  yes  # link default: no
 
 # linking the .profile file
 #                             type  mode  source
-.bash_profile                 link  0600  .profile   # link ~/.dotfiles/.profile to ~/.bash_profile
-.bashrc                       link  0600  ~/.profile # link ~/.profile to ~/.bashrc
+# link ~/.dotfiles/.profile to ~/.bash_profile
+.bash_profile                 link  0600  .profile
+# link ~/.profile to ~/.bashrc
+.bashrc                       link  0600  ~/.profile
 
 # more dotfiles (mode will be enforced)
 #                             type  mode  link
-.gnupg                        dir   0700  yes  # link ~/.dotfiles/.gnupg to ~/.gnupg
-.ssh                          dir   0700       # creates ~/.ssh (no link)
-.ssh/id_ed25519               file  0600  yes  # link ~/.dotfiles/.ssh/id_ed25519 to ~/.ssh/id_ed25519
-.ssh/id_ed25519.pub           file  0644  yes  # link ~/.dotfiles/.ssh/id_ed25519.pub to ~/.ssh/id_ed25519.pub
-.vimrc                        file  0640  yes  # link ~/.dotfiles/.vimrc -> ~/.vimrc
-.screenrc                     file  0640       # just rests within the ~/.dotfiles (mode will be enforced)
+# link ~/.dotfiles/.gnupg to ~/.gnupg
+.gnupg                        dir   0700  yes
+# creates ~/.ssh (no link)
+.ssh                          dir   0700
+# link ~/.dotfiles/.ssh/id_ed25519 to ~/.ssh/id_ed25519
+.ssh/id_ed25519               file  0600  yes
+# link ~/.dotfiles/.ssh/id_ed25519.pub to ~/.ssh/id_ed25519.pub
+.ssh/id_ed25519.pub           file  0644  yes
+# link ~/.dotfiles/.vimrc -> ~/.vimrc
+.vimrc                        file  0640  yes
+# just rests within the ~/.dotfiles (mode will be enforced)
+.screenrc                     file  0640
 # more...
 ```
 
