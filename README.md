@@ -16,13 +16,43 @@ Options:
   -d dir  : Use directory for recursive mode (default: /your-homedir/.dotfiles)
   -H home : Home directory (default: /your-homedir)
 ```
+### The `.hier` file
+```sh
+# (dot).hier
 
-## Supported types
+# the local repository directory itself (~/.dotfiles)
+#                             type  mode
+.                             ldir  0700
 
- * `dir` - Directory
- * `ldir` - Local directory
- * `file` - File
- * `lfile` - Local file
- * `link` - (Sym)link
- * `git` - Git
- * `lgit` - Local git
+# local files within the repository directory
+#                             type  mode
+.editorconfig                 lfile 0640
+.gitignore                    lfile 0640
+LICENSE                       lfile 0640
+README.md                     lfile 0640
+dothier                       lfile 0750
+
+# dotfiles collection (not shipped ;)
+#                             type  mode  link
+.profile                      file  0600  yes  # link default: no
+
+# linking the .profile file
+#                             type  mode  source
+.bash_profile                 link  0600  .profile   # link ~/.dotfiles/.profile to ~/.bash_profile
+.bashrc                       link  0600  ~/.profile # link ~/.profile to ~/.bashrc
+
+# more dotfiles (mode will be enforced)
+#                             type  mode  link
+.gnupg                        dir   0700  yes  # link ~/.dotfiles/.gnupg to ~/.gnupg
+.ssh                          dir   0700       # creates ~/.ssh (no link)
+.ssh/id_ed25519               file  0600  yes  # link ~/.dotfiles/.ssh/id_ed25519 to ~/.ssh/id_ed25519
+.ssh/id_ed25519.pub           file  0644  yes  # link ~/.dotfiles/.ssh/id_ed25519.pub to ~/.ssh/id_ed25519.pub
+.vimrc                        file  0640  yes  # link ~/.dotfiles/.vimrc -> ~/.vimrc
+.screenrc                     file  0640       # just rests within the ~/.dotfiles (mode will be enforced)
+# more...
+```
+
+### Deploy your dotfiles hierachy
+```sh
+dothier -f ~/.dotfiles/.hier
+```
