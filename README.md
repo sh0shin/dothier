@@ -1,7 +1,7 @@
 # dothier
 Manage dotfiles hierarchy.  
-Keep all your dotfiles in a git repository and deploy them with one simple
-command `dothier`...
+Keep all your dotfiles in one or multiple git repositories and deploy them with
+one simple command `dothier`.
 
 [![GitHub Release](https://img.shields.io/github/v/release/sh0shin/dothier)](https://github.com/sh0shin/dothier/releases)
 [![GitHub License](https://img.shields.io/github/license/sh0shin/dothier)](https://github.com/sh0shin/dothier/blob/master/LICENSE)
@@ -31,8 +31,8 @@ Options:
   -r      : Enable recursive mode (default: false)
   -v      : Verbose output (default: false)
   -f file : The .hier file to use (default: .hier)
-  -d dir  : Use directory for recursive mode (default: /your-homedir/.dotfiles)
-  -H home : Home directory (default: /your-homedir)
+  -d dir  : Use directory for recursive mode (default: ~/.dotfiles)
+  -H home : Home directory (default: ~/)
 ```
 
 ### The `.hier` file
@@ -78,9 +78,31 @@ dothier                       lfile 0750
 # just rests within the ~/.dotfiles (mode will be enforced)
 .screenrc                     file  0640
 # more...
+
+# git repositories
+#                             type  pull  depth
+# clone/pull git repositories to/from ~/.dotfiles/<name>
+.lgitsrc                      lgit  yes # depth default: 1
+# clone/pull git repositories to/from ~/<name>
+.gitsrc                       git   yes   1
 ```
 
-### Deploy your dotfiles hierachy
+### The `.(l)gitsrc` file
+```sh
+# git repository url                      name (optional)
+# destination path is defined in .hier
+# clone the repository as name dothier
+https://github.com/sh0shin/dothier.git
+# clone the repository as name dothier-git-src
+https://github.com/sh0shin/dothier.git    dothier-git-src
+```
+
+### Deploy your dotfiles
 ```sh
 dothier -f ~/.dotfiles/.hier
+```
+Or use the `-r` recursive option to deploy from `~/.dotfiles`, per default all
+found `.hier` files will be used.
+```sh
+dothier -r
 ```
