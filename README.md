@@ -3,6 +3,9 @@ Manage dotfiles hierarchy.
 Keep all your dotfiles in a git repository and deploy them with one simple
 command `dothier`...
 
+[![GitHub Release](https://img.shields.io/github/v/release/sh0shin/dothier)](https://github.com/sh0shin/dothier/releases)
+[![GitHub License](https://img.shields.io/github/license/sh0shin/dothier)](https://github.com/sh0shin/dothier/LICENSE)
+
 ## Installation
 The only supported package manger for now is [homebrew](https://brew.sh)
 ```sh
