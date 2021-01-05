@@ -32,7 +32,7 @@
 
 # self, version, url
 readonly dothier_self="$(basename "$0")"
-readonly dothier_version="v0.1.0"
+readonly dothier_version="v0.1.1"
 readonly dothier_url="https://sh0shin.org/dothier"
 
 # default options
@@ -289,6 +289,10 @@ exec_link()
       then
         # absolute
         root_path="$link"
+      elif [[ "$link" =~ ^(~/.*)?$ ]]
+      then
+        # ~ -> $HOME
+        root_path="${link//\~/$home}"
       else
         # relative
         root_path="$root/$link"
@@ -327,7 +331,7 @@ exec_link()
     if [[ "$(readlink "$home_path")" != "$root_path" ]] && [[ "$link" != "no" ]]
     then
       echo -e "${c_info}[I] (link)\tREMOVING WRONG LINK=$_readlink -> $home_path TYPE=$type${c_none}"
-      echo rm -rf "$home_path"
+      rm "$home_path"
     fi
   fi
 
@@ -335,7 +339,7 @@ exec_link()
   if [[ -L "$home_path" ]] && [[ "$link" == "no" ]]
   then
     echo -e "${c_info}[I] (link)\t REMOVING LINK=$home_path TYPE=$type${c_none}"
-    echo rm "$home_path"
+    rm "$home_path"
     return
   fi
 
@@ -354,8 +358,11 @@ exec_link()
     fi
   fi
 
-  # pass tmutil
-  exec_tmutil "$home_path" "$tmex" "$type"
+  if [[ "$type" != "link" ]]
+  then
+    # pass tmutil
+    exec_tmutil "$home_path" "$tmex" "$type"
+  fi
 }
 
 # exec_dir <root> <home> <path> <type> <mode> <link> <tmex>
