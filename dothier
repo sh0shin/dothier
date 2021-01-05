@@ -32,7 +32,7 @@
 
 # self, version, url
 readonly dothier_self="$(basename "$0")"
-readonly dothier_version="v0.1.1"
+readonly dothier_version="v0.1.2"
 readonly dothier_url="https://sh0shin.org/dothier"
 
 # default options
@@ -312,14 +312,14 @@ exec_link()
   if [[ ! -L "$home_path" ]] && [[ -d "$home_path" ]] && [[ "$type" != "dir" ]]
   then
     echo -e "${c_info}[I] (link)\tREMOVING DIRECTORY PATH=$home_path TYPE=$type${c_none}"
-    echo "rm -r $home_path"
+    rm -r "$home_path"
   fi
 
   # remove file
   if [[ ! -L "$home_path" ]] && [[ -f "$home_path" ]] && [[ "$type" != "file" ]]
   then
     echo -e "${c_info}[I] (link)\tREMOVING FILE PATH=$home_path TYPE=$type${c_none}"
-    echo "rm $home_path"
+    rm "$home_path"
   fi
 
   # wrong link
