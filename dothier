@@ -193,6 +193,33 @@ stat_mode()
   echo "$stat"
 }
 
+# sane_mode <mode> <type>
+sane_mode()
+{
+  local mode="$1"
+  local type="$2"
+
+  # mode sanity
+  if [[ "$type" == "dir" ]] || [[ "$type" == "ldir" ]]
+  then
+    if [[ "${mode:1:4}" -lt 500 ]] || [[ "${mode:1:4}" -gt 775 ]]
+    then
+      omsg w "(mode)\tINSANE MODE=$mode PATH=$path TYPE=$type"
+      return 1
+    fi
+  fi
+
+  if [[ "$type" == "file" ]] || [[ "$type" == "lfile" ]]
+  then
+    if [[ "${mode:1:4}" -lt 400 ]] || [[ "${mode:1:4}" -gt 775 ]]
+    then
+      omsg w "(mode)\tINSANE MODE=$mode PATH=$path TYPE=$type"
+      return 1
+    fi
+  fi
+  return 0
+}
+
 # exec_mode <path> <mode>
 exec_mode()
 {
@@ -243,23 +270,6 @@ exec_mode()
       fi
     fi
     return
-  fi
-
-  # mode sanity
-  if [[ "$type" == "dir" ]] || [[ "$type" == "ldir" ]]
-  then
-    if [[ "$mode" -lt 0700 ]] || [[ "$mode" -gt 0775 ]]
-    then
-      omsg w "(mode)\tINSANE MODE=$mode PATH=$path TYPE=$type"
-    fi
-  fi
-
-  if [[ "$type" == "file" ]] || [[ "$type" == "lfile" ]]
-  then
-    if [[ "$mode" -lt 0400 ]] || [[ "$mode" -lt 0400 ]]
-    then
-      omsg w "(mode)\tINSANE MODE=$mode PATH=$path TYPE=$type"
-    fi
   fi
 
   # check mode
@@ -830,6 +840,9 @@ read_dothier()
         return
         ;;
     esac
+
+    # mode sanity
+    sane_mode "$mode" "$type" || continue
 
     # default link
     link="${link:-$dothier_file_link}"
