@@ -42,9 +42,13 @@ Gemfile.lock
 .terraform.lock.hcl
 
 # local
-#...
+*.devel
+*HOME/
+.[a-z]*
 
 # excludes
+!.editorconfig
 !.git
 !.git_keep
+!.gitignore
 !.gitkeep
