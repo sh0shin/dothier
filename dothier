@@ -245,6 +245,23 @@ exec_mode()
     return
   fi
 
+  # mode sanity
+  if [[ "$type" == "dir" ]] || [[ "$type" == "ldir" ]]
+  then
+    if [[ "$mode" -lt 0700 ]] || [[ "$mode" -gt 0775 ]]
+    then
+      omsg w "(mode)\tINSANE MODE=$mode PATH=$path TYPE=$type"
+    fi
+  fi
+
+  if [[ "$type" == "file" ]] || [[ "$type" == "lfile" ]]
+  then
+    if [[ "$mode" -lt 0400 ]] || [[ "$mode" -lt 0400 ]]
+    then
+      omsg w "(mode)\tINSANE MODE=$mode PATH=$path TYPE=$type"
+    fi
+  fi
+
   # check mode
   _mode="$(stat_mode "$path")"
   if [[ "$_mode" != "$mode" ]]
@@ -255,7 +272,6 @@ exec_mode()
       # directory
       if [[ -d "$path" ]]
       then
-        # TODO: warn dirmode <700
         omsg i "(mode)\tCHANGING MODE=$_mode > $mode PATH=$path TYPE=$type"
         chmod "$mode" "$path"
       fi
@@ -263,7 +279,6 @@ exec_mode()
       # file
       if [[ -f "$path" ]]
       then
-        # TODO: warn filemode >770
         omsg i "(mode)\tCHANGING MODE=$_mode > $mode PATH=$path TYPE=$type"
         chmod "$mode" "$path"
       fi
