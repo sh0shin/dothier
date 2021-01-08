@@ -42,6 +42,8 @@ dothier_color=true
 dothier_debug=false
 # -g
 dothier_gitpull=false
+# -k
+dothier_kill=false
 # -r
 dothier_recursive=false
 # -v
@@ -152,7 +154,7 @@ check_support()
 show_usage()
 {
   echo "$dothier_self $dothier_version ( $dothier_url )"
-  echo "Usage: $dothier_self [-Dhrv] [-f file] [-d dir] [-H home]"
+  echo "Usage: $dothier_self [-CDhkrv] [-f file] [-d dir] [-H home]"
 }
 
 show_help()
@@ -160,13 +162,14 @@ show_help()
   show_usage
   echo "Options:"
   echo "  -C      : Disable colorized output"
-  echo "  -D      : Enable verbose debug output"
+  echo "  -D      : Enable verbose & debug output"
   echo "  -g      : Enable git pull (default: $dothier_gitpull)"
   echo "  -h      : Show this help"
+  echo "  -k      : Enable kill/remove mode (default: $dothier_kill)"
   echo "  -r      : Enable recursive mode (default: $dothier_recursive)"
-  echo "  -v      : Verbose output (default: $dothier_verbose)"
-  echo "  -f file : The .hier file to use (default: $dothier_file)"
-  echo "  -d dir  : Use directory for recursive mode (default: $dothier_dir)"
+  echo "  -v      : Enable verbose output (default: $dothier_verbose)"
+  echo "  -f file : The .hier file (default: $dothier_file in recursive mode)"
+  echo "  -d dir  : Use dotfiles directory in recursive mode (default: $dothier_dir)"
   echo "  -H home : Home directory (default: $dothier_home)"
   echo
 }
@@ -207,14 +210,35 @@ exec_mode()
     # directory
     if [[ -d "$path" ]]
     then
-      omsg i "(mode)\tREMOVING PATH=$path TYPE=$type"
-      rmdir "$path"
+      if [[ "$dothier_kill" == true ]]
+      then
+        omsg i "(mode)\tREMOVING PATH=$path TYPE=$type"
+        rm -r "$path"
+      else
+        omsg w "(mode)\tNOT REMOVING PATH=$path TYPE=$type"
+      fi
 
     # file
     elif [[ -f "$path" ]]
     then
-      omsg i "(mode)\tREMOVING PATH=$path TYPE=$type"
-      rm "$path"
+      if [[ "$dothier_kill" == true ]]
+      then
+        omsg i "(mode)\tREMOVING PATH=$path TYPE=$type"
+        rm "$path"
+      else
+        omsg w "(mode)\tNOT REMOVING PATH=$path TYPE=$type"
+      fi
+
+    # link
+    elif [[ -L "$path" ]]
+    then
+      if [[ "$dothier_kill" == true ]]
+      then
+        omsg i "(mode)\tREMOVING PATH=$path TYPE=$type"
+        rm "$path"
+      else
+        omsg w "(mode)\tNOT REMOVING PATH=$path TYPE=$type"
+      fi
     fi
     return
   fi
@@ -274,11 +298,16 @@ exec_link()
 
   local root_path="$root/$path"
   local home_path="$home/$path"
+  local orphaned=0
 
   omsg d "(link)\tEXEC ROOT=$root HOME=$home PATH=$path TYPE=$type MODE=$mode LINK=$link TMEX=$tmex"
 
   # delete mode
-  # TODO
+  if [[ "$mode" == 0000 ]] && [[ "$type" == "link" ]]
+  then
+    exec_mode "$home_path" "$mode" "$type"
+    return
+  fi
 
   # ldir || lfile
   if [[ "$type" == "ldir" ]] || [[ "$type" == "lfile" ]]
@@ -339,15 +368,25 @@ exec_link()
   # remove dir
   if [[ ! -L "$home_path" ]] && [[ -d "$home_path" ]] && [[ "$type" != "dir" ]]
   then
-    omsg i "(link)\tREMOVING DIRECTORY PATH=$home_path TYPE=$type"
-    rm -r "$home_path"
+    if [[ "$dothier_kill" == true ]]
+    then
+      omsg i "(link)\tREMOVING WRONG DIRECTORY PATH=$home_path TYPE=$type"
+      rm -r "$home_path"
+    else
+      omsg w "(link)\tWRONG DIRECTORY EXISTS PATH=$home_path TYPE=$type"
+    fi
   fi
 
   # remove file
   if [[ ! -L "$home_path" ]] && [[ -f "$home_path" ]] && [[ "$type" != "file" ]]
   then
-    omsg i "(link)\tREMOVING FILE PATH=$home_path TYPE=$type"
-    rm "$home_path"
+    if [[ "$dothier_kill" == true ]]
+    then
+      omsg i "(link)\tREMOVING WRONG FILE PATH=$home_path TYPE=$type"
+      rm "$home_path"
+    else
+      omsg w "(link)\tWRONG FILE EXISTS PATH=$home_path TYPE=$type"
+    fi
   fi
 
   # wrong link
@@ -358,23 +397,46 @@ exec_link()
     # remove
     if [[ "$(readlink "$home_path")" != "$root_path" ]] && [[ "$link" != "no" ]]
     then
-      omsg i "(link)\tREMOVING WRONG LINK=$_readlink -> $home_path TYPE=$type"
-      rm "$home_path"
+      if [[ "$dothier_kill" == true ]]
+      then
+        omsg i "(link)\tREMOVING WRONG LINK=$_readlink -> $home_path TYPE=$type"
+        rm "$home_path"
+      else
+        omsg w "(link)\tLINK EXISTS LINK=$_readlink -> $home_path TYPE=$type"
+      fi
     fi
   fi
 
   # no link
   if [[ -L "$home_path" ]] && [[ "$link" == "no" ]]
   then
-    omsg i "(link)\t REMOVING LINK=$home_path TYPE=$type"
-    rm "$home_path"
+    if [[ "$dothier_kill" == true ]]
+    then
+      omsg i "(link)\tREMOVING LINK=$home_path TYPE=$type"
+      rm "$home_path"
+    else
+      omsg w "(link)\tNOT REMOVING LINK=$home_path TYPE=$type"
+    fi
     return
   fi
 
   # create link
   if [[ "$link" != "no" ]]
   then
-    if [[ ! -L "$home_path" ]] && [[ "$link" != "no" ]]
+    # remove orphaned
+    if [[ ! -L "$home_path" ]] && [[ -e "$home_path" ]]
+    then
+      if [[ "$dothier_kill" == true ]]
+      then
+        omsg i "(link)\tREMOVING PATH=$home_path TYPE=$type"
+        rm "$home_path"
+      else
+        omsg w "(link)\tNOT LINKED DESTINATION EXISTS PATH=$home_path TYPE=$type"
+        orphaned=1
+      fi
+    fi
+
+    if [[ ! -L "$home_path" ]] && [[ "$link" != "no" ]] && [[ "$orphaned" -eq 0 ]]
     then
       omsg i "(link)\tCREATING LINK=$root_path -> $home_path TYPE=$type"
       ln -s "$root_path" "$home_path"
@@ -587,7 +649,7 @@ exec_git()
       if [[ "$gitpull" == "yes" ]]
       then
         omsg i "(git)\tPULLING PATH=$gitdst"
-        # TODO
+        # TODO: verbose & color
         (
           cd "$gitdst" || return
           if [[ "$dothier_gitverbose" == true ]]
@@ -600,7 +662,7 @@ exec_git()
       fi
     else
       omsg i "(git)\tCLONING URL=$giturl PATH=$gitdst"
-      # TODO
+      # TODO: verbose & color
       (
         if [[ "$dothier_gitverbose" == true ]]
         then
@@ -689,8 +751,7 @@ read_dothier()
     if [[ -d "$dothier_root/.git" ]]
     then
       omsg i "(git)\tPULLING PATH=$dothier_root"
-      # TODO
-      echo -ne "$c_gitverbose"
+      # TODO: verbose & color
       (
         cd "$dothier_root" || return
         if [[ "$dothier_gitverbose" == true ]]
@@ -700,7 +761,6 @@ read_dothier()
           git pull --quiet
         fi
       )
-      echo -ne "$c_none"
     fi
   fi
 
@@ -793,7 +853,7 @@ read_dothier_recursive()
 check_support
 
 # options
-while getopts ":CDghrvf:d:H:" opt
+while getopts ":CDghkrvf:d:H:" opt
 do
   case $opt in
     C)
@@ -809,6 +869,9 @@ do
     h)
       show_help
       exit 1
+      ;;
+    k)
+      dothier_kill=true
       ;;
     r)
       dothier_recursive=true
