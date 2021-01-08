@@ -30,6 +30,8 @@
 #
 # dothier - Manage dotfiles hierarchy
 
+set -o pipefail -eu
+
 # self, version, url
 readonly dothier_self="$(basename "$0")"
 readonly dothier_version="v0.1.4-beta"
@@ -390,19 +392,23 @@ exec_link()
   fi
 
   # wrong link
-  local _readlink
-  _readlink="$(readlink "$home_path")"
-  if [[ -n "$_readlink" ]]
+  if [[ -L "$home_path" ]]
   then
-    # remove
-    if [[ "$(readlink "$home_path")" != "$root_path" ]] && [[ "$link" != "no" ]]
+    local _readlink
+    _readlink="$(readlink "$home_path")"
+
+    if [[ -n "$_readlink" ]]
     then
-      if [[ "$dothier_kill" == true ]]
+      # remove
+      if [[ "$(readlink "$home_path")" != "$root_path" ]] && [[ "$link" != "no" ]]
       then
-        omsg i "(link)\tREMOVING WRONG LINK=$_readlink -> $home_path TYPE=$type"
-        rm "$home_path"
-      else
-        omsg w "(link)\tLINK EXISTS LINK=$_readlink -> $home_path TYPE=$type"
+        if [[ "$dothier_kill" == true ]]
+        then
+          omsg i "(link)\tREMOVING WRONG LINK=$_readlink -> $home_path TYPE=$type"
+          rm "$home_path"
+        else
+          omsg w "(link)\tLINK EXISTS LINK=$_readlink -> $home_path TYPE=$type"
+        fi
       fi
     fi
   fi
