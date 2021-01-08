@@ -678,8 +678,8 @@ read_dothier()
   # create home
   if [[ ! -d "$dothier_home" ]]
   then
-    omsg w "(read)\tHOME NOT FOUND $dothier_home"
-    omsg w "(read)\tCREATING HOME $dothier_home"
+    omsg w "(read)\tNOT FOUND HOME=$dothier_home"
+    omsg w "(read)\tCREATING HOME=$dothier_home"
     mkdir -p "$dothier_home"
   fi
 
