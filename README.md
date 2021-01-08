@@ -1,7 +1,6 @@
 # dothier
-Manage dotfiles hierarchy.  
 Keep all your dotfiles in one or multiple git repositories and deploy them with
-one simple command `dothier`.
+one simple command.
 
 [![GitHub Release](https://img.shields.io/github/v/release/sh0shin/dothier)](https://github.com/sh0shin/dothier/releases)
 [![GitHub License](https://img.shields.io/github/license/sh0shin/dothier)](https://github.com/sh0shin/dothier/blob/master/LICENSE)
