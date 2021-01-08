@@ -70,7 +70,7 @@ dothier_home="$HOME"
 omsg()
 {
   local level="$1"
-  local msg="$2"
+  local msg="${2:-}"
 
   # dothier colors
   # Black        0;30   Dark Gray    1;30
