@@ -32,7 +32,7 @@
 
 # self, version, url
 readonly dothier_self="$(basename "$0")"
-readonly dothier_version="v0.1.2"
+readonly dothier_version="v0.1.3"
 readonly dothier_url="https://sh0shin.org/dothier"
 
 # default options
@@ -292,7 +292,7 @@ exec_link()
       elif [[ "$link" =~ ^(~/.*)?$ ]]
       then
         # ~ -> $HOME
-        root_path="${link//\~/$home}"
+        root_path="${link/\~/$home}"
       else
         # relative
         root_path="$root/$link"
