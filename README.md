@@ -34,6 +34,21 @@ Options:
   -H home : Home directory (default: ~/)
 ```
 
+### Dotfiles repo
+```sh
+mkdir ~/.dotfiles
+cd .dotfiles
+git init
+git remote add origin <repo.url>
+
+# Move your dotfiles here
+# .profile
+# .vimrc
+# ...
+
+# Define your dotfiles in a .hier file
+```
+
 ### The `.hier` file
 ```sh
 # (dot).hier
