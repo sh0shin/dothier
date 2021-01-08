@@ -133,10 +133,22 @@ omsg()
     echo -e "${c_verbose}[V] $msg${c_none}"
   fi
 
+  # git verbose
+  if [[ "$level" == "g" ]] && [[ "$dothier_gitverbose" == true ]]
+  then
+    echo -ne "$c_gitverbose"
+  fi
+
   # debug
   if [[ "$level" == "d" ]] && [[ "$dothier_debug" == true ]]
   then
     echo -e "${c_debug}[D] $msg${c_none}"
+  fi
+
+  # none
+  if [[ "$level" == "n" ]]
+  then
+    echo -ne "$c_none"
   fi
 }
 
@@ -680,7 +692,7 @@ exec_git()
       if [[ "$gitpull" == "yes" ]]
       then
         omsg i "(git)\tPULLING PATH=$gitdst"
-        # TODO: verbose & color
+        omsg g
         (
           cd "$gitdst" || return
           if [[ "$dothier_gitverbose" == true ]]
@@ -690,10 +702,11 @@ exec_git()
             git pull --quiet
           fi
         )
+        omsg n
       fi
     else
       omsg i "(git)\tCLONING URL=$giturl PATH=$gitdst"
-      # TODO: verbose & color
+      omsg g
       (
         if [[ "$dothier_gitverbose" == true ]]
         then
@@ -702,6 +715,7 @@ exec_git()
           git clone --quiet --depth="$gitdepth" "$giturl" "$gitdst"
         fi
       )
+      omsg n
     fi
 
     # pass tmutil
@@ -782,7 +796,7 @@ read_dothier()
     if [[ -d "$dothier_root/.git" ]]
     then
       omsg i "(git)\tPULLING PATH=$dothier_root"
-      # TODO: verbose & color
+      omsg g
       (
         cd "$dothier_root" || return
         if [[ "$dothier_gitverbose" == true ]]
@@ -792,6 +806,7 @@ read_dothier()
           git pull --quiet
         fi
       )
+      omsg n
     fi
   fi
 
