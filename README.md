@@ -21,17 +21,19 @@ chmod 0755 /usr/local/bin/dothier
 
 ## Usage
 ```
-dothier v0.1.1 ( https://sh0shin.org/dothier )
-Usage: dothier [-Dhrv] [-f file] [-d dir] [-H home]
+dothier v0.1.4-beta ( https://sh0shin.org/dothier )
+Usage: dothier [-CDhkrv] [-f file] [-d dir] [-H home]
 Options:
-  -D      : Enable verbose debug output
+  -C      : Disable colorized output
+  -D      : Enable verbose & debug output
   -g      : Enable git pull (default: false)
   -h      : Show this help
+  -k      : Enable kill/remove mode (default: false)
   -r      : Enable recursive mode (default: false)
-  -v      : Verbose output (default: false)
-  -f file : The .hier file to use (default: .hier)
-  -d dir  : Use directory for recursive mode (default: ~/.dotfiles)
-  -H home : Home directory (default: ~/)
+  -v      : Enable verbose output (default: false)
+  -f file : The .hier file (default: .hier in recursive mode)
+  -d dir  : Use dotfiles directory in recursive mode (default: /Users/sh0/.dotfiles)
+  -H home : Home directory (default: /Users/sh0)
 ```
 
 ### Dotfiles repo
