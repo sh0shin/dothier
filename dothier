@@ -778,10 +778,10 @@ search_deadlink()
   do
     if [[ "$dothier_kill" == true ]]
     then
-      omsg i "(mode)\tREMOVING DEAD LINK=$link"
+      omsg i "(dead)\tREMOVING DEAD LINK=$link"
       rm "$link"
     else
-      omsg w "(mode)\tNOT REMOVING DEAD LINK=$link"
+      omsg w "(dead)\tNOT REMOVING DEAD LINK=$link"
     fi
   done
 }
