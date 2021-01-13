@@ -34,7 +34,7 @@ set -o pipefail -eu
 
 # self, version, url
 readonly dothier_self="$(basename "$0")"
-readonly dothier_version="v0.1.4-beta"
+readonly dothier_version="v0.1.4-beta.2"
 readonly dothier_url="https://sh0shin.org/dothier"
 
 # default options
@@ -46,11 +46,12 @@ dothier_debug=false
 dothier_gitpull=false
 # -k
 dothier_kill=false
+# -l
+dothier_deadlink=false
 # -r
 dothier_recursive=false
 # -v
 dothier_verbose=false
-dothier_gitverbose=false
 # -f file
 dothier_file=".hier"
 # -d dir
@@ -134,7 +135,7 @@ omsg()
   fi
 
   # git verbose
-  if [[ "$level" == "g" ]] && [[ "$dothier_gitverbose" == true ]]
+  if [[ "$level" == "g" ]] && [[ "$dothier_verbose" == true ]]
   then
     echo -ne "$c_gitverbose"
   fi
@@ -168,7 +169,7 @@ check_support()
 show_usage()
 {
   echo "$dothier_self $dothier_version ( $dothier_url )"
-  echo "Usage: $dothier_self [-CDhkrv] [-f file] [-d dir] [-H home]"
+  echo "Usage: $dothier_self [-CDhklrv] [-f file] [-d dir] [-H home]"
 }
 
 show_help()
@@ -180,6 +181,7 @@ show_help()
   echo "  -g      : Enable git pull (default: $dothier_gitpull)"
   echo "  -h      : Show this help"
   echo "  -k      : Enable kill/remove mode (default: $dothier_kill)"
+  echo "  -l      : Enable dead link search (default: $dothier_deadlink)"
   echo "  -r      : Enable recursive mode (default: $dothier_recursive)"
   echo "  -v      : Enable verbose output (default: $dothier_verbose)"
   echo "  -f file : The .hier file (default: $dothier_file in recursive mode)"
@@ -695,7 +697,7 @@ exec_git()
         omsg g
         (
           cd "$gitdst" || return
-          if [[ "$dothier_gitverbose" == true ]]
+          if [[ "$dothier_verbose" == true ]]
           then
             git pull --verbose
           else
@@ -708,7 +710,7 @@ exec_git()
       omsg i "(git)\tCLONING URL=$giturl PATH=$gitdst"
       omsg g
       (
-        if [[ "$dothier_gitverbose" == true ]]
+        if [[ "$dothier_verbose" == true ]]
         then
           git clone --verbose --depth="$gitdepth" "$giturl" "$gitdst"
         else
@@ -763,6 +765,27 @@ exec_tmutil()
   fi
 }
 
+search_deadlink()
+{
+  local home="$1"
+  local dead
+  local link
+
+  # dead links
+  dead="$(find "$home" \( -name Library -o -name Volumes \) -prune -false -o -type l ! -exec test -e '{}' \; -print)"
+
+  for link in $dead
+  do
+    if [[ "$dothier_kill" == true ]]
+    then
+      omsg i "(mode)\tREMOVING DEAD LINK=$link"
+      rm "$link"
+    else
+      omsg w "(mode)\tNOT REMOVING DEAD LINK=$link"
+    fi
+  done
+}
+
 # read_dothier <dothier_file> <dothier_home>
 read_dothier()
 {
@@ -779,7 +802,7 @@ read_dothier()
   if [[ ! -e "$dothier_file" ]]
   then
     omsg e "(read) NOT FOUND $dothier_file"
-    return
+    exit 1
   fi
 
   # create home
@@ -799,7 +822,7 @@ read_dothier()
       omsg g
       (
         cd "$dothier_root" || return
-        if [[ "$dothier_gitverbose" == true ]]
+        if [[ "$dothier_verbose" == true ]]
         then
           git pull --verbose
         else
@@ -902,7 +925,7 @@ read_dothier_recursive()
 check_support
 
 # options
-while getopts ":CDghkrvf:d:H:" opt
+while getopts ":CDghklrvf:d:H:" opt
 do
   case $opt in
     C)
@@ -922,12 +945,14 @@ do
     k)
       dothier_kill=true
       ;;
+    l)
+      dothier_deadlink=true
+      ;;
     r)
       dothier_recursive=true
       ;;
     v)
       dothier_verbose=true
-      dothier_gitverbose=true
       ;;
     f)
       dothier_file="$OPTARG"
@@ -968,4 +993,9 @@ then
   read_dothier_recursive "$dothier_file" "$dothier_home" "$dothier_dir"
 else
   read_dothier "$dothier_file" "$dothier_home"
+fi
+
+if [[ "$dothier_deadlink" == true ]]
+then
+  search_deadlink "$dothier_home"
 fi
