@@ -287,6 +287,12 @@ exec_mode()
   fi
 
   # check mode
+  if [[ ! -e "$path" ]]
+  then
+    omsg v "(mode)\tNOT EXISTING HERE PATH=$path TYPE=$type"
+    return
+  fi
+
   _mode="$(stat_mode "$path")"
   if [[ "$_mode" != "$mode" ]]
   then
@@ -307,6 +313,13 @@ exec_mode()
         chmod "$mode" "$path"
       fi
     else
+
+      if [[ "$type" == "link" ]]
+      then
+        omsg d "(mode)\tSKIPPING LINK PATH=$path TYPE=$type"
+        return
+      fi
+
       # linked directory
       _readlink="$(readlink "$path")"
       _mode="$(stat_mode "$_readlink")"
@@ -492,6 +505,9 @@ exec_link()
 
   if [[ "$type" != "link" ]]
   then
+    # pass mode
+    exec_mode "$home_path" "$mode" "$type"
+
     # pass tmutil
     exec_tmutil "$home_path" "$tmex" "$type"
   fi
@@ -544,6 +560,7 @@ exec_dir()
       fi
     else
       omsg v "(dir)\tOK PATH=$root_path TYPE=$type"
+
       # pass mode
       exec_mode "$root_path" "$mode" "$type"
     fi
@@ -581,8 +598,9 @@ exec_dir()
       fi
     else
       omsg v "(dir)\tOK PATH=$home_path TYPE=$type"
+
       # pass mode
-      exec_mode "$home_path" "$mode" "$type"
+      exec_mode "$root_path" "$mode" "$type"
     fi
   fi
 
@@ -626,9 +644,6 @@ exec_file()
   else
     omsg v "(file)\tOK PATH=$root_path TYPE=$type"
   fi
-
-  # mode
-  exec_mode "$root_path" "$mode" "$type"
 
   # pass link
   exec_link "$root" "$home" "$path" "$type" "$mode" "$link" "$tmex"
