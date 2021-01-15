@@ -21,14 +21,15 @@ chmod 0755 /usr/local/bin/dothier
 
 ## Usage
 ```
-dothier v0.1.4-beta ( https://sh0shin.org/dothier )
-Usage: dothier [-CDhkrv] [-f file] [-d dir] [-H home]
+dothier v0.1.4 ( https://sh0shin.org/dothier )
+Usage: dothier [-CDhklrv] [-f file] [-d dir] [-H home]
 Options:
   -C      : Disable colorized output
   -D      : Enable verbose & debug output
   -g      : Enable git pull (default: false)
   -h      : Show this help
   -k      : Enable kill/remove mode (default: false)
+  -l      : Enable dead link search (default: false)
   -r      : Enable recursive mode (default: false)
   -v      : Enable verbose output (default: false)
   -f file : The .hier file (default: .hier in recursive mode)
