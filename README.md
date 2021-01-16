@@ -123,3 +123,8 @@ found `.hier` files will be used.
 ```sh
 dothier -r
 ```
+
+Recursive mode & searching for dead links (Use `-k` to delete)
+```sh
+dothier -rl
+```
