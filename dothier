@@ -672,9 +672,9 @@ exec_git()
 
   omsg d "(git)\tEXEC ROOT=$root HOME=$home PATH=$path TYPE=$type PULL=$gitpull DEPTH=$gitdepth TMEX=$tmex"
 
-  local giturl gitname gitdir
+  local giturl gitdst gitmode gitname gitdir
   IFS=$' \t'
-  while read -r giturl gitdst
+  while read -r giturl gitdst gitmode
   do
     # skip comments
     [[ "$giturl" =~ ^(#.*)?$ ]] && continue
@@ -683,6 +683,7 @@ exec_git()
     gitdir="${gitname%*.git}"
 
     # tmutil exclusion
+    # TODO: remove
     if [[ "$gitdst" =~ ^@ ]]
     then
       tmex=1
@@ -700,6 +701,17 @@ exec_git()
       fi
     else
       gitdst="$home_path/$gitdir"
+    fi
+
+    # mode
+    if [[ -n "$gitmode" ]]
+    then
+      # tmutil exclusion
+      if [[ "$gitmode" =~ ^@ ]]
+      then
+        tmex=1
+        gitmode="${gitmode##@}"
+      fi
     fi
 
     omsg v "(git)\tURL=$giturl PATH=$gitdst"
@@ -734,6 +746,9 @@ exec_git()
       )
       omsg n
     fi
+
+    # pass mode
+    exec_mode "$gitdst" "$gitmode" "$type"
 
     # pass tmutil
     exec_tmutil "$gitdst" "$tmex" "$type"

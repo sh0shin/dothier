@@ -1,6 +1,6 @@
-# git repository url                      name (optional)
+# git repository url                      name (optional)   mode (optional)
 # destination path is defined in .hier
 # clone the repository as name dothier
 https://github.com/sh0shin/dothier.git
 # clone the repository as name dothier-git-src
-https://github.com/sh0shin/dothier.git    dothier-git-src
+https://github.com/sh0shin/dothier.git    dothier-git-src   0750
