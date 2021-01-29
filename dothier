@@ -748,7 +748,10 @@ exec_git()
     fi
 
     # pass mode
-    exec_mode "$gitdst" "$gitmode" "$type"
+    if [[ -n "$gitmode" ]]
+    then
+      exec_mode "$gitdst" "$gitmode" "$type"
+    fi
 
     # pass tmutil
     exec_tmutil "$gitdst" "$tmex" "$type"
