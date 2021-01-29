@@ -21,7 +21,7 @@ chmod 0755 /usr/local/bin/dothier
 
 ## Usage
 ```
-dothier v0.1.4 ( https://sh0shin.org/dothier )
+dothier v0.1.5 ( https://sh0shin.org/dothier )
 Usage: dothier [-CDhklrv] [-f file] [-d dir] [-H home]
 Options:
   -C      : Disable colorized output
@@ -106,12 +106,12 @@ dothier                       lfile 0750
 
 ### The `.(l)gitsrc` file
 ```sh
-# git repository url                      name (optional)
+# git repository url                      name (optional)   mode (optional)
 # destination path is defined in .hier
 # clone the repository as name dothier
 https://github.com/sh0shin/dothier.git
 # clone the repository as name dothier-git-src
-https://github.com/sh0shin/dothier.git    dothier-git-src
+https://github.com/sh0shin/dothier.git    dothier-git-src   0750
 ```
 
 ### Deploy your dotfiles
