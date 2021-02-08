@@ -49,7 +49,7 @@ Options:
   -v      : Enable verbose mode
 ```
 
-### Dotfiles repo
+### Dotfiles repository
 ```sh
 mkdir ~/.dotfiles
 cd ~/.dotfiles
