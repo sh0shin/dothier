@@ -138,8 +138,7 @@ https://github.com/sh0shin/dothier.git  dothier-git-src   0750
 ```sh
 dothier -f ~/.dotfiles/.hier
 ```
-Or use the `-r` recursive option to deploy from `~/.dotfiles`, per default all
-found `.hier` files will be used.
+Or use the `-r` recursive option to deploy from `~/.dotfiles`, all found `.hier` files will be used.
 ```sh
 dothier -r
 ```
