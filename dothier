@@ -56,8 +56,6 @@ readonly dothier_url="https://sh0shin.org/dothier"
 : "${dothier_home:="$HOME"}"
 # -R
 : "${dothier_remove:=false}"
-# -V
-: "${dothier_verbose:=false}"
 
 # -d
 : "${dothier_dir:="$dothier_home/.dotfiles"}"
@@ -72,7 +70,6 @@ readonly dothier_url="https://sh0shin.org/dothier"
 : "${dothier_recursive:=false}"
 # -s
 : "${dothier_shortmsg:=false}"
-
 # -t
 : "${dothier_tmutil:=false}"
 # -v
@@ -114,6 +111,7 @@ dothier_msg()
   local color_info=""
   local color_debug=""
 
+  local color_misc=""
   local color_none=""
 
   if [[ $dothier_color == true ]]
@@ -397,6 +395,7 @@ dothier_dir() {
     dothier_tmutil "$home_path" "$tmex"
     return
   fi
+
   echo "${FUNCNAME[0]} UNHANDLED: $path $type $mode $link $tmex $repo $home"
 }
 
