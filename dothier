@@ -47,13 +47,11 @@ readonly dothier_url="https://sh0shin.org/dothier"
 : "${dothier_link:="no"}"
 
 ## tmutil exclude
-: "${dothier_tmex:="no"}"
+: "${dothier_tmex:=false}"
 
 ## dothier config
 # -C
 : "${dothier_color:=true}"
-# -D
-#: "${dothier_debug:=false}"
 # -H
 : "${dothier_home:="$HOME"}"
 # -R
@@ -108,7 +106,7 @@ dothier_msg()
   # Warning       (level 4)
   # Notice        (level 5)
   # Info          (level 6)
-  # Debug         (level 7)
+  # Debug         (level 7) **UNUSED**
 
   local color_error=""
   local color_warning=""
