@@ -5,8 +5,20 @@ one simple command.
 [![GitHub Release](https://img.shields.io/github/v/release/sh0shin/dothier)](https://github.com/sh0shin/dothier/releases)
 [![GitHub License](https://img.shields.io/github/license/sh0shin/dothier)](https://github.com/sh0shin/dothier/blob/master/LICENSE)
 
+## Notes
+**v0.2.0+ is using different `.hier` properties!**
+ * `ltype` is now `rtype` to represent repository type.
+   - `ldir` -> `rdir`
+   - `lfile` -> `rfile`
+   - `lgit` -> `rgit`
+
+ * `.gitsrc` files are now treated as `rfile`.
+   - `pull` & `depth` properties were moved to the `.gitsrc` file itself.
+
+ * Some options changed, see: [Usage](#usage).
+
 ## Installation
-The only supported package manger for now is [homebrew](https://brew.sh)
+The only supported package manger for now is [homebrew](https://brew.sh).
 ```sh
 brew tap sh0shin/tap
 brew install sh0shin/tap/dothier
@@ -15,32 +27,32 @@ brew install sh0shin/tap/dothier
 Or simply clone the git repository, it's just a bash script 8)
 ```sh
 git clone https://github.com/sh0shin/dothier.git
-cp dothier/dothier /usr/local/bin
-chmod 0755 /usr/local/bin/dothier
+install -m 0555 dothier/dothier /usr/local/bin
 ```
 
 ## Usage
 ```
-dothier v0.1.5 ( https://sh0shin.org/dothier )
-Usage: dothier [-CDhklrv] [-f file] [-d dir] [-H home]
+dothier v0.2.0 ( https://sh0shin.org/dothier )
+Usage: dothier [-CRghnrstv] [-f file] [-d dir] [-H home]
 Options:
   -C      : Disable colorized output
-  -D      : Enable verbose & debug output
-  -g      : Enable git pull (default: false)
+  -H home : Home directory (default: $HOME)
+  -R      : Enable remove/delete mode
+  -d dir  : Use directory for recursive mode (default: $HOME/.dotfiles)
+  -f file : Use dothier file (default: .hier)
+  -g      : Enable git pull
   -h      : Show this help
-  -k      : Enable kill/remove mode (default: false)
-  -l      : Enable dead link search (default: false)
-  -r      : Enable recursive mode (default: false)
-  -v      : Enable verbose output (default: false)
-  -f file : The .hier file (default: .hier in recursive mode)
-  -d dir  : Use dotfiles directory in recursive mode (default: /Users/sh0/.dotfiles)
-  -H home : Home directory (default: /Users/sh0)
+  -n      : Dry-run
+  -r      : Enable recursive mode
+  -s      : Short message mode
+  -t      : Enable tmutil (macOS only)
+  -v      : Enable verbose mode
 ```
 
 ### Dotfiles repo
 ```sh
 mkdir ~/.dotfiles
-cd .dotfiles
+cd ~/.dotfiles
 git init
 git remote add origin <repo.url>
 
@@ -52,66 +64,74 @@ git remote add origin <repo.url>
 # Define your dotfiles in a .hier file
 ```
 
-### The `.hier` file
+### `.hier` file
 ```sh
 # (dot).hier
+#! <path>                     <type>  <[@]mode> [link (yes|no)|link-source]
+# the repository directory itself (~/.dotfiles)
+.                             rdir    0700
 
-# the local repository directory itself (~/.dotfiles)
-#                             type  mode
-.                             ldir  0700
-
-# local files within the repository directory
-#                             type  mode
-.editorconfig                 lfile 0640
-.gitignore                    lfile 0640
-LICENSE                       lfile 0640
-README.md                     lfile 0640
-dothier                       lfile 0750
+# files within the repository
+.editorconfig                 rfile   0640
+.gitignore                    rfile   0640
+LICENSE                       rfile   0640
+README.md                     rfile   0640
+dothier                       rfile   0750
 
 # dotfiles collection (not shipped ;)
-#                             type  mode  link
 # link ~/.dotfiles/.profile to ~/.profile
-.profile                      file  0600  yes  # link default: no
+.profile                      file    0600      yes  # link default: no
 
 # linking the .profile file
-#                             type  mode  source
 # link ~/.dotfiles/.profile to ~/.bash_profile
-.bash_profile                 link  0600  .profile
+.bash_profile                 link    0600      .profile
+
 # link ~/.profile to ~/.bashrc
-.bashrc                       link  0600  ~/.profile
+.bashrc                       link    0600      ~/.profile
 
 # more dotfiles (mode will be enforced)
-#                             type  mode  link
 # link ~/.dotfiles/.gnupg to ~/.gnupg
-.gnupg                        dir   0700  yes
+.gnupg                        dir     0700      yes
+
 # creates ~/.ssh (no link)
-.ssh                          dir   0700
+.ssh                          dir     0700
+
 # link ~/.dotfiles/.ssh/id_ed25519 to ~/.ssh/id_ed25519
-.ssh/id_ed25519               file  0600  yes
+.ssh/id_ed25519               file    0600      yes
+
 # link ~/.dotfiles/.ssh/id_ed25519.pub to ~/.ssh/id_ed25519.pub
-.ssh/id_ed25519.pub           file  0644  yes
+.ssh/id_ed25519.pub           file    0644      yes
+
 # link ~/.dotfiles/.vimrc -> ~/.vimrc
-.vimrc                        file  0640  yes
+.vimrc                        file    0640      yes
+
 # just rests within the ~/.dotfiles (mode will be enforced)
-.screenrc                     file  0640
+.screenrc                     file    0640
+
+# macos directory which will be excluded from time machine backups (@mode)
+.macos                        dir     @0700
+
 # more...
 
 # git repositories
-#                             type  pull  depth
 # clone/pull git repositories to/from ~/.dotfiles/<name>
-.lgitsrc                      lgit  yes # depth default: 1
+.gitsrc                       rgit    0600
+
 # clone/pull git repositories to/from ~/<name>
-.gitsrc                       git   yes   1
+.gitsrc                       git     0600
 ```
 
-### The `.(l)gitsrc` file
+### `.gitsrc` file
 ```sh
-# git repository url                      name (optional)   mode (optional)
-# destination path is defined in .hier
+#! <git-repository-url>                 [destination]     [[@]mode] [pull]  [depth]
+
 # clone the repository as name dothier
+# mode is set from umask, pull defaults to yes, depth to 1
 https://github.com/sh0shin/dothier.git
-# clone the repository as name dothier-git-src
-https://github.com/sh0shin/dothier.git    dothier-git-src   0750
+
+# clone the repository as name dothier-git-src (mode: 0750)
+# macos users can use @0750 to exclude from time machine backups
+https://github.com/sh0shin/dothier.git  dothier-git-src   0750
 ```
 
 ### Deploy your dotfiles
@@ -122,9 +142,4 @@ Or use the `-r` recursive option to deploy from `~/.dotfiles`, per default all
 found `.hier` files will be used.
 ```sh
 dothier -r
-```
-
-Recursive mode & searching for dead links (Use `-k` to delete)
-```sh
-dothier -rl
 ```
