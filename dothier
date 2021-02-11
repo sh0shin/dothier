@@ -213,7 +213,7 @@ dothier_mode() {
     $dothier_runner chmod "$mode" "$path" || :
     return
   else
-    dothier_msg v "OK: $path ($mode)"
+    dothier_msg v "ok: $path ($mode)"
     return
   fi
 
@@ -284,7 +284,7 @@ dothier_link() {
           return
         fi
       else
-        dothier_msg v "OK: $link_src -> $link_dst"
+        dothier_msg v "ok: $link_src -> $link_dst"
         return
       fi
 
@@ -381,7 +381,7 @@ dothier_dir() {
       $dothier_runner mkdir -m "$mode" "$home_path"
     elif [[ -d "$home_path" ]]
     then
-      dothier_msg v "OK: $home_path"
+      dothier_msg v "ok: $home_path"
       dothier_mode "$home_path" "$type" "$mode"
 
       # mode for repo
@@ -606,14 +606,14 @@ dothier_tmutil() {
         dothier_msg i "removing exclusion $path"
         tmutil removeexclusion "$path"
       else
-        dothier_msg v "OK: $path ($tmex)"
+        dothier_msg v "ok: $path ($tmex)"
       fi
     elif [[ $tmex == true ]]
     then
       dothier_msg i "adding exclusion $path"
       tmutil addexclusion "$path"
     else
-      dothier_msg v "OK: $path ($tmex)"
+      dothier_msg v "ok: $path ($tmex)"
     fi
     return
   else
