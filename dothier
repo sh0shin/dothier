@@ -38,17 +38,6 @@ readonly dothier_self="${0##*/}"
 readonly dothier_version="v0.2.1"
 readonly dothier_url="https://sh0shin.org/dothier"
 
-# defautls
-## modes
-: "${dothier_dir_mode:=0750}"
-: "${dothier_file_mode:=0640}"
-
-## creat link
-: "${dothier_link:="no"}"
-
-## tmutil exclude
-: "${dothier_tmex:=false}"
-
 ## dothier config
 # -C
 : "${dothier_color:=true}"
@@ -687,8 +676,8 @@ dothier_read() {
       tmex=false
     fi
 
-    # link defaults
-    : "${link:=$dothier_link}"
+    # link default
+    : "${link:="no"}"
 
     # set run type
     local read_run
@@ -818,6 +807,10 @@ dothier_main() {
 
   # umask
   umask "$dothier_umask"
+
+  # modes
+  dothier_dir_mode="0$((777 - ${dothier_umask:(-2)}))"
+  dothier_file_mode="0$((666 - ${dothier_umask:(-2)}))"
 
   # absolute
   if [[ ! "$dothier_home" =~ ^(/.*)?$ ]]
