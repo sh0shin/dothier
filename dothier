@@ -57,6 +57,8 @@ readonly dothier_url="https://sh0shin.org/dothier"
 # -R
 : "${dothier_remove:=false}"
 
+# -c
+: "${dothier_config:="$HOME/.config/dothier.conf"}"
 # -d
 : "${dothier_dir:="$dothier_home/.dotfiles"}"
 # -f
@@ -167,6 +169,7 @@ dothier_help() {
   echo "  -H home : Home directory (default: $dothier_home)"
   echo "  -R      : Enable remove/delete mode"
 
+  echo "  -c conf : Use config file (default: $dothier_config)"
   echo "  -d dir  : Use directory for recursive mode (default: $dothier_dir)"
   echo "  -f file : Use dothier file (default: $dothier_file)"
   echo "  -g      : Enable git pull"
@@ -755,12 +758,13 @@ dothier_recursive()
 dothier_main() {
   local main_run=""
 
-  while getopts ":CH:Rd:f:ghnrstuv" opt
+  while getopts ":CH:Rc:d:f:ghnrstuv" opt
   do
     case $opt in
       C) dothier_color=false ;;
       H) dothier_home="$OPTARG";;
       R) dothier_remove=true;;
+      c) dothier_config="$OPTARG";;
       d) dothier_dir="$OPTARG";;
       f) dothier_file="$OPTARG";;
       g) dothier_gitpull=true;;
@@ -796,6 +800,21 @@ dothier_main() {
         ;;
     esac
   done
+
+  # config
+  if [[ -f "$dothier_config" ]]
+  then
+    # TODO: check config
+    # shellcheck source=/dev/null
+    source "$dothier_config"
+    dothier_msg v "config: $dothier_config"
+  else
+    if [[ "$dothier_config" != "$HOME/.config/dothier.conf" ]]
+    then
+      dothier_msg e "config not found: $dothier_config"
+      return
+    fi
+  fi
 
   # umask
   umask "$dothier_umask"
