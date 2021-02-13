@@ -35,7 +35,7 @@ set -o pipefail -eu
 
 # self, version, url
 readonly dothier_self="${0##*/}"
-readonly dothier_version="v0.2.0"
+readonly dothier_version="v0.2.1"
 readonly dothier_url="https://sh0shin.org/dothier"
 
 # defautls
@@ -72,6 +72,8 @@ readonly dothier_url="https://sh0shin.org/dothier"
 : "${dothier_shortmsg:=false}"
 # -t
 : "${dothier_tmutil:=false}"
+# -u
+: "${dothier_umask:=$(umask)}"
 # -v
 : "${dothier_verbose:=false}"
 
@@ -173,6 +175,7 @@ dothier_help() {
   echo "  -r      : Enable recursive mode"
   echo "  -s      : Short message mode"
   echo "  -t      : Enable tmutil (macOS only)"
+  echo "  -u      : Set umask (default: $dothier_umask)"
   echo "  -v      : Enable verbose mode"
 }
 
@@ -752,7 +755,7 @@ dothier_recursive()
 dothier_main() {
   local main_run=""
 
-  while getopts ":CH:Rd:f:ghnrstv" opt
+  while getopts ":CH:Rd:f:ghnrstuv" opt
   do
     case $opt in
       C) dothier_color=false ;;
@@ -774,6 +777,7 @@ dothier_main() {
       r) main_run="dothier_recursive";;
       s) dothier_shortmsg=true;;
       t) dothier_tmutil=true;;
+      u) dothier_umask="$OPTARG";;
       v) dothier_verbose=true;;
 
       :)
@@ -792,6 +796,9 @@ dothier_main() {
         ;;
     esac
   done
+
+  # umask
+  umask "$dothier_umask"
 
   # absolute
   if [[ ! "$dothier_home" =~ ^(/.*)?$ ]]
