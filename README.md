@@ -7,7 +7,7 @@ one simple command.
 
 ## Notes
 **v0.2.0+ is using different `.hier` properties!**
- * `ltype` is now `rtype` to represent repository type.
+ * `l(type)` is now `r(type)` to represent repository type.
    - `ldir` -> `rdir`
    - `lfile` -> `rfile`
    - `lgit` -> `rgit`
