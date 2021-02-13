@@ -758,7 +758,7 @@ dothier_recursive()
 dothier_main() {
   local main_run=""
 
-  while getopts ":CH:Rc:d:f:ghnrstuv" opt
+  while getopts ":CH:Rc:d:f:ghnrstu:v" opt
   do
     case $opt in
       C) dothier_color=false ;;
