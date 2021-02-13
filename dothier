@@ -58,7 +58,7 @@ readonly dothier_url="https://sh0shin.org/dothier"
 : "${dothier_remove:=false}"
 
 # -c
-: "${dothier_config:="$HOME/.config/dothier.conf"}"
+: "${dothier_config:="$HOME/.config/dothier"}"
 # -d
 : "${dothier_dir:="$dothier_home/.dotfiles"}"
 # -f
@@ -809,7 +809,7 @@ dothier_main() {
     source "$dothier_config"
     dothier_msg v "config: $dothier_config"
   else
-    if [[ "$dothier_config" != "$HOME/.config/dothier.conf" ]]
+    if [[ "$dothier_config" != "$HOME/.config/dothier" ]]
     then
       dothier_msg e "config not found: $dothier_config"
       return
