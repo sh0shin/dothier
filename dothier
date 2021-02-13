@@ -276,9 +276,10 @@ dothier_link() {
       if [[ "$_readlink" != "$link_src" ]]
       then
         # remove
-        if [[ "$dothier_remove" == "yes" ]]
+        if [[ "$dothier_remove" == true ]]
         then
-          echo rm "$link_dst"
+          dothier_msg w "removing link: $link_dst"
+          $dothier_runner rm "$link_dst"
         else
           dothier_msg w "wrong link: $link_dst $_readlink"
           return
@@ -292,11 +293,12 @@ dothier_link() {
     elif [[ -d "$link_dst" ]]
     then
       # remove
-      if [[ "$dothier_remove" == "yes" ]]
+      if [[ "$dothier_remove" == true ]]
       then
-        echo rm -r "$link_dst"
+        dothier_msg w "removing dir: $link_dst"
+        $dothier_runner rm -r "$link_dst"
       else
-        dothier_msg w "dir: $link_dst exists!"
+        dothier_msg w "exits dir: $link_dst"
         return
       fi
 
@@ -304,11 +306,12 @@ dothier_link() {
     elif [[ -f "$link_dst" ]]
     then
       # remove
-      if [[ "$dothier_remove" == "yes" ]]
+      if [[ "$dothier_remove" == true ]]
       then
-        echo rm "$link_dst"
+        dothier_msg w "removing file: $link_dst"
+        $dothier_runner rm "$link_dst"
       else
-        dothier_msg w "file: $link_dst exists!"
+        dothier_msg w "exists file: $link_dst"
         return
       fi
     fi
