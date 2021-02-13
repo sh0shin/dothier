@@ -807,7 +807,7 @@ dothier_main() {
     # TODO: check config
     # shellcheck source=/dev/null
     source "$dothier_config"
-    dothier_msg v "config: $dothier_config"
+    dothier_msg n "config: $dothier_config"
   else
     if [[ "$dothier_config" != "$HOME/.config/dothier" ]]
     then
