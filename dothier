@@ -201,7 +201,7 @@ dothier_mode() {
 
   if [[ $type == "link" ]]
   then
-    dothier_msg w "type link is unsupported!"
+    dothier_msg w "unsupported: $path type=link"
     return
   fi
 
@@ -209,7 +209,7 @@ dothier_mode() {
   _mode=$(dothier_stat "$path")
   if [[ "$_mode" != "$mode" ]]
   then
-    dothier_msg i "change $path $_mode -> $mode"
+    dothier_msg i "change: $path $_mode -> $mode"
     $dothier_runner chmod "$mode" "$path" || :
     return
   else
@@ -344,13 +344,13 @@ dothier_dir() {
     # linked repo directory
     if [[ "$link" != "no" ]]
     then
-      dothier_msg e "unsupported: type=rdir & link=yes"
+      dothier_msg e "unsupported: $path type=rdir & link=yes"
     fi
 
     # repo directory
     if [[ ! -d "$repo_path" ]]
     then
-      dothier_msg w "missing: $repo_path"
+      dothier_msg w "not found: $repo_path"
       #echo mkdir -m "$mode" "$repo_path"
       return
     elif [[ -d "$repo_path" ]]
@@ -368,7 +368,7 @@ dothier_dir() {
     then
       if [[ ! -d "$repo_path" ]]
       then
-        dothier_msg e "missing: $repo_path"
+        dothier_msg e "not found: $repo_path"
         return
       else
         dothier_mode "$repo_path" "$type" "$mode"
@@ -422,7 +422,7 @@ dothier_file() {
     # linked repo file
     if [[ "$link" != "no" ]]
     then
-      dothier_msg w "unsupported: type=rfile & link=yes"
+      dothier_msg w "unsupported: $path type=rfile & link=yes"
     fi
 
     # repo file
@@ -445,7 +445,7 @@ dothier_file() {
     then
       if [[ ! -f "$repo_path" ]]
       then
-        dothier_msg e "missing: $repo_path"
+        dothier_msg e "not found: $repo_path"
         return
       else
         dothier_mode "$repo_path" "$type" "$mode"
@@ -462,12 +462,12 @@ dothier_file() {
   then
     if [[ "$link" != "no" ]]
     then
-      dothier_msg w "unsupportd: type=$type & link=$link"
+      dothier_msg w "unsupported: $path type=$type & link=$link"
     fi
 
     if [[ ! -f "$repo_path" ]]
     then
-      dothier_msg e "missing: $repo_path"
+      dothier_msg e "not found: $repo_path"
       return
     else
       dothier_mode "$repo_path" "$type" "$mode"
@@ -584,11 +584,11 @@ dothier_tmutil() {
 
   if [[ -f "$path" ]]
   then
-    dothier_msg e "unsupported: type=file"
+    dothier_msg e "unsupported: $path type=file"
     return
   elif [[ -L "$path" ]]
   then
-    dothier_msg e "unsupported: type=link"
+    dothier_msg e "unsupported: $path type=link"
     return
   fi
 
@@ -660,7 +660,7 @@ dothier_read() {
     ## skip absolute path
     if [[ "$path" =~ ^(/.*)?$ ]]
     then
-      dothier_msg w "unsupported: absolute path $path"
+      dothier_msg w "unsupported: $path absolute path"
       continue
     fi
 
@@ -668,7 +668,7 @@ dothier_read() {
     ## skip empty mode
     if [[ -z "$mode" ]]
     then
-      dothier_msg w "unsupported: empty mode $path"
+      dothier_msg w "unsupported: $path empty mode"
       continue
     fi
 
@@ -700,7 +700,7 @@ dothier_read() {
         read_run=("dothier_link")
         ;;
       *)
-        dothier_msg w "unsupported: type=$type"
+        dothier_msg w "unsupported: $path type=$type"
         continue
         ;;
     esac
