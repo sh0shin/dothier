@@ -276,7 +276,7 @@ dothier_link() {
       if [[ "$_readlink" != "$link_src" ]]
       then
         # remove
-        if [[ "$dothier_remove" == true ]]
+        if [[ $dothier_remove == true ]]
         then
           dothier_msg w "removing link: $link_dst"
           $dothier_runner rm "$link_dst"
@@ -293,7 +293,7 @@ dothier_link() {
     elif [[ -d "$link_dst" ]]
     then
       # remove
-      if [[ "$dothier_remove" == true ]]
+      if [[ $dothier_remove == true ]]
       then
         dothier_msg w "removing dir: $link_dst"
         $dothier_runner rm -r "$link_dst"
@@ -306,7 +306,7 @@ dothier_link() {
     elif [[ -f "$link_dst" ]]
     then
       # remove
-      if [[ "$dothier_remove" == true ]]
+      if [[ $dothier_remove == true ]]
       then
         dothier_msg w "removing file: $link_dst"
         $dothier_runner rm "$link_dst"
@@ -344,13 +344,13 @@ dothier_dir() {
     # linked repo directory
     if [[ "$link" != "no" ]]
     then
-      dothier_msg e "type rdir with link yes is unsupported!"
+      dothier_msg e "unsupported: type=rdir & link=yes"
     fi
 
     # repo directory
     if [[ ! -d "$repo_path" ]]
     then
-      dothier_msg w "$repo_path is missing!"
+      dothier_msg w "missing: $repo_path"
       #echo mkdir -m "$mode" "$repo_path"
       return
     elif [[ -d "$repo_path" ]]
@@ -368,7 +368,7 @@ dothier_dir() {
     then
       if [[ ! -d "$repo_path" ]]
       then
-        dothier_msg e "$repo_path is missing!"
+        dothier_msg e "missing: $repo_path"
         return
       else
         dothier_mode "$repo_path" "$type" "$mode"
@@ -380,7 +380,7 @@ dothier_dir() {
     # home directory
     if [[ ! -d "$home_path" ]]
     then
-      dothier_msg i "creating $home_path"
+      dothier_msg i "creating: $home_path"
       $dothier_runner mkdir -m "$mode" "$home_path"
     elif [[ -d "$home_path" ]]
     then
@@ -422,7 +422,7 @@ dothier_file() {
     # linked repo file
     if [[ "$link" != "no" ]]
     then
-      dothier_msg w "rfile with link=yes is unsupported!"
+      dothier_msg w "unsupported: type=rfile & link=yes"
     fi
 
     # repo file
@@ -445,7 +445,7 @@ dothier_file() {
     then
       if [[ ! -f "$repo_path" ]]
       then
-        dothier_msg e "$repo_path is missing!"
+        dothier_msg e "missing: $repo_path"
         return
       else
         dothier_mode "$repo_path" "$type" "$mode"
@@ -462,12 +462,12 @@ dothier_file() {
   then
     if [[ "$link" != "no" ]]
     then
-      dothier_msg w "type=$type with link=$link is unsupported!"
+      dothier_msg w "unsupportd: type=$type & link=$link"
     fi
 
     if [[ ! -f "$repo_path" ]]
     then
-      dothier_msg e "$repo_path is missing!"
+      dothier_msg e "missing: $repo_path"
       return
     else
       dothier_mode "$repo_path" "$type" "$mode"
@@ -494,7 +494,7 @@ dothier_git() {
   # process git file
   if [[ ! -e "$repo_path" ]]
   then
-    echo "git: $repo_path not found!"
+    dothier_msg e "not found: $repo_path"
     return
   fi
 
@@ -552,13 +552,13 @@ dothier_git() {
     then
       if [[ "$gitpull" == "yes" ]] && [[ $dothier_gitpull == true ]]
       then
-        dothier_msg i "pull $gitdst"
+        dothier_msg i "pull: $gitdst"
         $dothier_runner git --git-dir="$gitdst/.git" --work-tree="$gitdst" pull --quiet
       else
         dothier_msg v "ok: $gitdst"
       fi
     else
-      dothier_msg i "clone $giturl $gitdst"
+      dothier_msg i "clone: $giturl $gitdst"
       $dothier_runner git  clone --quiet --depth="$gitdepth" "$giturl" "$gitdst"
     fi
 
@@ -584,11 +584,11 @@ dothier_tmutil() {
 
   if [[ -f "$path" ]]
   then
-    dothier_msg e "type=file is unsupported!"
+    dothier_msg e "unsupported: type=file"
     return
   elif [[ -L "$path" ]]
   then
-    dothier_msg e "type=link is unsupported"
+    dothier_msg e "unsupported: type=link"
     return
   fi
 
@@ -606,21 +606,21 @@ dothier_tmutil() {
     then
       if [[ $tmex == false ]]
       then
-        dothier_msg i "removing exclusion $path"
+        dothier_msg i "removing exclusion: $path"
         tmutil removeexclusion "$path"
       else
         dothier_msg v "ok: $path ($tmex)"
       fi
     elif [[ $tmex == true ]]
     then
-      dothier_msg i "adding exclusion $path"
+      dothier_msg i "adding exclusion: $path"
       tmutil addexclusion "$path"
     else
       dothier_msg v "ok: $path ($tmex)"
     fi
     return
   else
-    dothier_msg e "$path not found!"
+    dothier_msg e "not found: $path"
     return
   fi
 
@@ -634,7 +634,7 @@ dothier_read() {
 
   if [[ ! -e "$file" ]]
   then
-    dothier_msg e "$file not found!"
+    dothier_msg e "not found: $file"
     return
   else
     dothier_msg n "$file"
@@ -660,8 +660,7 @@ dothier_read() {
     ## skip absolute path
     if [[ "$path" =~ ^(/.*)?$ ]]
     then
-      # TODO: msg
-      #echo "absolute path is not supported"
+      dothier_msg w "unsupported: absolute path $path"
       continue
     fi
 
@@ -669,8 +668,7 @@ dothier_read() {
     ## skip empty mode
     if [[ -z "$mode" ]]
     then
-      # TODO: msg
-      #echo "empty mode is not supported"
+      dothier_msg w "unsupported: empty mode $path"
       continue
     fi
 
@@ -702,7 +700,7 @@ dothier_read() {
         read_run=("dothier_link")
         ;;
       *)
-        # TODO: msg
+        dothier_msg w "unsupported: type=$type"
         continue
         ;;
     esac
@@ -716,7 +714,7 @@ dothier_read() {
         #echo "read_run=$_read_run" "path=$path" "type=$type" "mode=$mode" "link=$link" "tmex=$tmex" "repo=$repo" "home=$home"
         "$_read_run" "$path" "$type" "$mode" "$link" "$tmex" "$repo" "$home"
       else
-        # TODO: msg
+        dothier_msg w "unsupported: $_read_run"
         continue
       fi
     done
@@ -791,7 +789,7 @@ dothier_main() {
 
   if [[ ! -d "$dothier_home" ]]
   then
-    dothier_msg w "creating $dothier_home"
+    dothier_msg w "creating: $dothier_home"
     $dothier_runner mkdir -m "$dothier_dir_mode" "$dothier_home"
   fi
 
