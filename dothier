@@ -700,7 +700,19 @@ dothier_read() {
         read_run=("dothier_link")
         ;;
       *)
-        dothier_msg w "unsupported: $path type=$type"
+        # upgrade
+        if [[ "$type" == "ldir" ]]
+        then
+          dothier_msg w "upgrade: $file \"$path ldir\" to \"$path rdir\""
+        elif [[ "$type" == "lfile" ]]
+        then
+          dothier_msg w "upgrade: $file \"$path lfile\" to \"$path rfile\""
+        elif [[ "$type" == "lgit" ]]
+        then
+          dothier_msg w "upgrade: $file \"$path lgit\" to \"$path rgit\""
+        else
+          dothier_msg e "unsupported: $file $path type=$type"
+        fi
         continue
         ;;
     esac
