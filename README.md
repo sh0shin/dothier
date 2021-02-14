@@ -6,7 +6,9 @@ one simple command.
 [![GitHub License](https://img.shields.io/github/license/sh0shin/dothier)](https://github.com/sh0shin/dothier/blob/master/LICENSE)
 
 ## Notes
-**v0.2.0+ is using different `.hier` properties!**
+**v0.2.1+ is using different `.hier` properties!**
+ * `mode` is now optional (**experimental**)
+
  * `l(type)` is now `r(type)` to represent repository type.
    - `ldir` -> `rdir`
    - `lfile` -> `rfile`
