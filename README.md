@@ -51,6 +51,8 @@ Options:
   -v      : Enable verbose mode
 ```
 
+ * `dothier` config file (see: [dothier.config-sample](dothier.config-sample))
+
 ### Dotfiles repository
 ```sh
 mkdir ~/.dotfiles
