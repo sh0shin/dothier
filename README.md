@@ -6,7 +6,9 @@ one simple command.
 [![GitHub License](https://img.shields.io/github/license/sh0shin/dothier)](https://github.com/sh0shin/dothier/blob/master/LICENSE)
 
 ## Notes
-**v0.2.0+ is using different `.hier` properties!**
+**v0.2.1+ is using different `.hier` properties!**
+ * `mode` is now optional (**experimental**)
+
  * `l(type)` is now `r(type)` to represent repository type.
    - `ldir` -> `rdir`
    - `lfile` -> `rfile`
@@ -32,12 +34,13 @@ install -m 0555 dothier/dothier /usr/local/bin
 
 ## Usage
 ```
-dothier v0.2.0 ( https://sh0shin.org/dothier )
+dothier v0.2.1 ( https://sh0shin.org/dothier )
 Usage: dothier [-CRghnrstv] [-f file] [-d dir] [-H home]
 Options:
   -C      : Disable colorized output
   -H home : Home directory (default: $HOME)
   -R      : Enable remove/delete mode
+  -c conf : Use config file (default: $HOME/.config/dothier)
   -d dir  : Use directory for recursive mode (default: $HOME/.dotfiles)
   -f file : Use dothier file (default: .hier)
   -g      : Enable git pull
@@ -46,8 +49,11 @@ Options:
   -r      : Enable recursive mode
   -s      : Short message mode
   -t      : Enable tmutil (macOS only)
+  -u      : Set umask (default: 0022)
   -v      : Enable verbose mode
 ```
+
+ * `dothier` config file (see: [dothier.config-sample](dothier.config-sample))
 
 ### Dotfiles repository
 ```sh
@@ -64,75 +70,8 @@ git remote add origin <repo.url>
 # Define your dotfiles in a .hier file
 ```
 
-### `.hier` file
-```sh
-# (dot).hier
-#! <path>                     <type>  <[@]mode> [link (yes|no)|link-source]
-# the repository directory itself (~/.dotfiles)
-.                             rdir    0700
-
-# files within the repository
-.editorconfig                 rfile   0640
-.gitignore                    rfile   0640
-LICENSE                       rfile   0640
-README.md                     rfile   0640
-dothier                       rfile   0750
-
-# dotfiles collection (not shipped ;)
-# link ~/.dotfiles/.profile to ~/.profile
-.profile                      file    0600      yes  # link default: no
-
-# linking the .profile file
-# link ~/.dotfiles/.profile to ~/.bash_profile
-.bash_profile                 link    0600      .profile
-
-# link ~/.profile to ~/.bashrc
-.bashrc                       link    0600      ~/.profile
-
-# more dotfiles (mode will be enforced)
-# link ~/.dotfiles/.gnupg to ~/.gnupg
-.gnupg                        dir     0700      yes
-
-# creates ~/.ssh (no link)
-.ssh                          dir     0700
-
-# link ~/.dotfiles/.ssh/id_ed25519 to ~/.ssh/id_ed25519
-.ssh/id_ed25519               file    0600      yes
-
-# link ~/.dotfiles/.ssh/id_ed25519.pub to ~/.ssh/id_ed25519.pub
-.ssh/id_ed25519.pub           file    0644      yes
-
-# link ~/.dotfiles/.vimrc -> ~/.vimrc
-.vimrc                        file    0640      yes
-
-# just rests within the ~/.dotfiles (mode will be enforced)
-.screenrc                     file    0640
-
-# macos directory which will be excluded from time machine backups (@mode)
-.macos                        dir     @0700
-
-# more...
-
-# git repositories
-# clone/pull git repositories to/from ~/.dotfiles/<name>
-.gitsrc                       rgit    0600
-
-# clone/pull git repositories to/from ~/<name>
-.gitsrc                       git     0600
-```
-
-### `.gitsrc` file
-```sh
-#! <git-repository-url>                 [destination]     [[@]mode] [pull]  [depth]
-
-# clone the repository as name dothier
-# mode is set from umask, pull defaults to yes, depth to 1
-https://github.com/sh0shin/dothier.git
-
-# clone the repository as name dothier-git-src (mode: 0750)
-# macos users can use @0750 to exclude from time machine backups
-https://github.com/sh0shin/dothier.git  dothier-git-src   0750
-```
+ * `.hier` file (see: [hier.sample](hier.sample))
+ * `.gitsrc` file (see: [gitsrc.sample](gitsrc.sample))
 
 ### Deploy your dotfiles
 ```sh

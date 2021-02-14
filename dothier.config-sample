@@ -1,0 +1,38 @@
+# vim: set ft=sh :
+# shellcheck disable=SC2034
+
+# Colorized output (-C)
+#dothier_color=true
+
+# Home directory (-H)
+#dothier_home="$HOME"
+
+# Remove/delete mode (-R)
+#dothier_remove=false
+
+# Directory for recursive mode (-d)
+#dothier_dir="$dothier_home/.dotfiles"
+
+# Dothier file (-f)
+#dothier_file=".hier"
+
+# Git pull (-g)
+#dothier_gitpull=false
+
+# Dry-run (-n)
+#dothier_dryrun=false
+
+# Recursive mode (-r)
+#dothier_recursive=false
+
+# Short message mode (-s)
+#dothier_shortmsg=false
+
+# Use tmutil (macOS only) (-t)
+#dothier_tmutil=false
+
+# Set umask (-u)
+#dothier_umask="$(umask)"
+
+# Verbose mode (-v)
+#dothier_verbose=false

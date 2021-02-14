@@ -1,5 +1,7 @@
 #! <git-repository-url>                 [destination]     [[@]mode] [pull]  [depth]
 
+# TODO: optional mode if pull and/or depth is used
+
 # clone the repository as name dothier
 # mode is set from umask, pull defaults to yes, depth to 1
 https://github.com/sh0shin/dothier.git
