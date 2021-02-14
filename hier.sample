@@ -1,5 +1,5 @@
 # (dot).hier
-#! <path>                     <type>  <[@]mode> [link (yes|no)|link-source]
+#! <path>                     <type>  [[@]mode] [link (yes|no)|link-source]
 # the repository directory itself (~/.dotfiles)
 .                             rdir    0700
 
@@ -12,14 +12,15 @@ dothier                       rfile   0750
 
 # dotfiles collection (not shipped ;)
 # link ~/.dotfiles/.profile to ~/.profile
-.profile                      file    0600      yes  # link default: no
+.profile                      file    0640      yes  # link default: no
+.profile                      file              yes  # mode will be set from umask
 
 # linking the .profile file
 # link ~/.dotfiles/.profile to ~/.bash_profile
-.bash_profile                 link    0600      .profile
+.bash_profile                 link              .profile
 
 # link ~/.profile to ~/.bashrc
-.bashrc                       link    0600      ~/.profile
+.bashrc                       link              ~/.profile
 
 # more dotfiles (mode will be enforced)
 # link ~/.dotfiles/.gnupg to ~/.gnupg
