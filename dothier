@@ -659,12 +659,44 @@ dothier_read() {
       continue
     fi
 
-    # check mode
-    ## skip empty mode
-    if [[ -z "$mode" ]]
+    # check type
+    if [[ -z "$type" ]]
     then
-      dothier_msg w "unsupported: $path empty mode"
+      dothier_msg e "unsupported: $path type=empty"
       continue
+    fi
+
+    # check & set mode
+    # defaults
+    local _mode
+    # rfile, file, rgit, git
+    if [[ "$type" =~ file ]] || [[ "$type" =~ git ]]
+    then
+      _mode=$dothier_file_mode
+    # rdir, dir
+    elif [[ "$type" =~ dir ]]
+    then
+      _mode=$dothier_dir_mode
+    # link
+    elif [[ "$type" =~ link ]]
+    then
+      _mode="0000" # currently unused
+    fi
+
+    # match
+    if [[ ! "$mode" =~ ^(@)?[0-9]+$ ]]
+    then
+      # yes/no
+      if [[ "$mode" =~ ^(yes|no)$ ]]
+      then
+        link="$mode"
+        mode="$_mode"
+      # empty and link-source
+      elif [[ "$mode" =~ ^(.*)$ ]]
+      then
+        link="$mode"
+        mode="$_mode"
+      fi
     fi
 
     # tmutil exclude
