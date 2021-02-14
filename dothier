@@ -809,8 +809,8 @@ dothier_main() {
   umask "$dothier_umask"
 
   # modes
-  dothier_dir_mode="0$((777 - ${dothier_umask:(-2)}))"
-  dothier_file_mode="0$((666 - ${dothier_umask:(-2)}))"
+  dothier_dir_mode="$(printf '%#o' $((0777 & ~$(umask))))"
+  dothier_file_mode="$(printf '%#o' $((0777 & ~0111 & ~$(umask))))"
 
   # absolute
   if [[ ! "$dothier_home" =~ ^(/.*)?$ ]]
