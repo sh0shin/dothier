@@ -792,7 +792,7 @@ dothier_main() {
 
       h)
         dothier_help
-        exit 1
+        exit 0
         ;;
       n)
         dothier_dryrun=true
@@ -808,16 +808,16 @@ dothier_main() {
       :)
         echo "-${OPTARG} required argument missing!"
         dothier_usage
-        exit 1
+        exit 2
         ;;
       ?)
         echo "-${OPTARG} is invalid!"
         dothier_usage
-        exit 1
+        exit 2
         ;;
       *)
         dothier_usage
-        exit 1
+        exit 2
         ;;
     esac
   done
@@ -869,6 +869,7 @@ dothier_main() {
     fi
   else
     dothier_usage
+    exit 2
   fi
 }
 
