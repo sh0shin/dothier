@@ -554,7 +554,7 @@ dothier_git() {
       fi
     else
       dothier_msg i "clone: $giturl $gitdst"
-      $dothier_runner git  clone --quiet --depth="$gitdepth" "$giturl" "$gitdst"
+      $dothier_runner git clone --quiet --depth="$gitdepth" "$giturl" "$gitdst"
     fi
 
     # mode
