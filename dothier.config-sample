@@ -19,6 +19,9 @@
 # Git pull (-g)
 #dothier_gitpull=false
 
+# Git Crypt key file
+#dothier_key=
+
 # Dry-run (-n)
 #dothier_dryrun=false
 

@@ -34,8 +34,8 @@ install -m 0555 dothier/dothier /usr/local/bin
 
 ## Usage
 ```
-dothier v0.2.1 ( https://sh0shin.org/dothier )
-Usage: dothier [-CRghnrstv] [-f file] [-d dir] [-H home]
+dothier v0.2.2 ( https://sh0shin.org/dothier )
+Usage: dothier [-CRghnrstv] [-f file] [-d dir] [-H home] [-k file]
 Options:
   -C      : Disable colorized output
   -H home : Home directory (default: $HOME)
@@ -45,6 +45,7 @@ Options:
   -f file : Use dothier file (default: .hier)
   -g      : Enable git pull
   -h      : Show this help
+  -k file : Use git-crypt key file
   -n      : Dry-run
   -r      : Enable recursive mode
   -s      : Short message mode
