@@ -35,7 +35,7 @@ set -o pipefail -eu
 
 # self, version, url
 readonly dothier_self="${0##*/}"
-readonly dothier_version="v0.2.1"
+readonly dothier_version="v0.2.3"
 readonly dothier_url="https://sh0shin.org/dothier"
 
 ## dothier config
