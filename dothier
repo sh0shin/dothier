@@ -54,6 +54,8 @@ readonly dothier_url="https://sh0shin.org/dothier"
 : "${dothier_file:=".hier"}"
 # -g
 : "${dothier_gitpull:=false}"
+# -k
+: "${dothier_key:=""}"
 # -n
 : "${dothier_dryrun:=false}"
 : "${dothier_runner:="command"}"
@@ -146,7 +148,7 @@ dothier_msg()
 # dothier_usage
 dothier_usage() {
   echo "$dothier_self $dothier_version ( $dothier_url )"
-  echo "Usage: $dothier_self [-CRghnrstv] [-f file] [-d dir] [-H home]"
+  echo "Usage: $dothier_self [-CRghnrstv] [-f file] [-d dir] [-H home] [-k file]"
 }
 
 # dothier_help
@@ -163,6 +165,7 @@ dothier_help() {
   echo "  -f file : Use dothier file (default: $dothier_file)"
   echo "  -g      : Enable git pull"
   echo "  -h      : Show this help"
+  echo "  -k file : Use git-crypt key file"
   echo "  -n      : Dry-run"
   echo "  -r      : Enable recursive mode"
   echo "  -s      : Short message mode"
@@ -213,6 +216,30 @@ dothier_mode() {
   fi
 
   echo "${FUNCNAME[0]} UNHANDLED: $path $type $mode"
+}
+
+# dothier_crypt <path> <repo>
+dothier_crypt=""
+dothier_crypt() {
+  local path="$1"
+  local repo="$2"
+
+  if [[ "$dothier_crypt" == "$repo" ]]
+  then
+    dothier_msg v "unlocked: $repo"
+    return
+  fi
+
+  if [[ -n "$dothier_key" ]]
+  then
+    if grep -rq "\x00GITCRYPT" "$path"
+    then
+      dothier_msg i "unlock: $repo"
+      ( $dothier_runner cd "$repo" && \
+        $dothier_runner git crypt unlock "$dothier_key" )
+      dothier_crypt="$repo"
+    fi
+  fi
 }
 
 # dothier_link <path> <type> <mode> <link> <tmex> <repo> <home>
@@ -346,7 +373,6 @@ dothier_dir() {
     if [[ ! -d "$repo_path" ]]
     then
       dothier_msg w "not found: $repo_path"
-      #echo mkdir -m "$mode" "$repo_path"
       return
     elif [[ -d "$repo_path" ]]
     then
@@ -410,6 +436,9 @@ dothier_file() {
   local repo_path="$repo/$path"
   local home_path="$home/$path"
 
+  # crypt
+  dothier_crypt "$repo_path" "$repo"
+
   # type rfile
   if [[ "$type" == "rfile" ]]
   then
@@ -423,7 +452,7 @@ dothier_file() {
     # repo file
     if [[ ! -f "$repo_path" ]]
     then
-      echo touch "$mode" "$repo_path"
+      dothier_msg w "not found: $repo_path"
       return
     elif [[ -f "$repo_path" ]]
     then
@@ -554,7 +583,7 @@ dothier_git() {
       fi
     else
       dothier_msg i "clone: $giturl $gitdst"
-      $dothier_runner git  clone --quiet --depth="$gitdepth" "$giturl" "$gitdst"
+      $dothier_runner git clone --quiet --depth="$gitdepth" "$giturl" "$gitdst"
     fi
 
     # mode
@@ -750,7 +779,6 @@ dothier_read() {
     do
       if [[ "$(type -t "$_read_run")" == "function" ]]
       then
-        #echo "read_run=$_read_run" "path=$path" "type=$type" "mode=$mode" "link=$link" "tmex=$tmex" "repo=$repo" "home=$home"
         "$_read_run" "$path" "$type" "$mode" "$link" "$tmex" "$repo" "$home"
       else
         dothier_msg w "unsupported: $_read_run"
@@ -779,7 +807,7 @@ dothier_recursive()
 dothier_main() {
   local main_run=""
 
-  while getopts ":CH:Rc:d:f:ghnrstu:v" opt
+  while getopts ":CH:Rc:d:f:ghk:nrstu:v" opt
   do
     case $opt in
       C) dothier_color=false ;;
@@ -792,8 +820,9 @@ dothier_main() {
 
       h)
         dothier_help
-        exit 1
+        exit 0
         ;;
+      k) dothier_key="$OPTARG";;
       n)
         dothier_dryrun=true
         dothier_runner="echo -e \t(dry-run): "
@@ -808,16 +837,16 @@ dothier_main() {
       :)
         echo "-${OPTARG} required argument missing!"
         dothier_usage
-        exit 1
+        exit 2
         ;;
       ?)
         echo "-${OPTARG} is invalid!"
         dothier_usage
-        exit 1
+        exit 2
         ;;
       *)
         dothier_usage
-        exit 1
+        exit 2
         ;;
     esac
   done
@@ -869,6 +898,7 @@ dothier_main() {
     fi
   else
     dothier_usage
+    exit 2
   fi
 }
 
