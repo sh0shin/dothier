@@ -373,7 +373,6 @@ dothier_dir() {
     if [[ ! -d "$repo_path" ]]
     then
       dothier_msg w "not found: $repo_path"
-      #echo mkdir -m "$mode" "$repo_path"
       return
     elif [[ -d "$repo_path" ]]
     then
@@ -453,7 +452,7 @@ dothier_file() {
     # repo file
     if [[ ! -f "$repo_path" ]]
     then
-      echo touch "$mode" "$repo_path"
+      dothier_msg w "not found: $repo_path"
       return
     elif [[ -f "$repo_path" ]]
     then
@@ -780,7 +779,6 @@ dothier_read() {
     do
       if [[ "$(type -t "$_read_run")" == "function" ]]
       then
-        #echo "read_run=$_read_run" "path=$path" "type=$type" "mode=$mode" "link=$link" "tmex=$tmex" "repo=$repo" "home=$home"
         "$_read_run" "$path" "$type" "$mode" "$link" "$tmex" "$repo" "$home"
       else
         dothier_msg w "unsupported: $_read_run"
