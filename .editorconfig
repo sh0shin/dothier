@@ -10,21 +10,6 @@ insert_final_newline = true
 max_line_length = 0
 trim_trailing_whitespace = true
 
-[*.{md,markdown}]
+[*.md]
 indent_size = 1
-max_line_length = 0
 trim_trailing_whitespace = false
-
-[*.{sh,msx}]
-indent_size = 2
-indent_style = space
-max_line_length = 160
-
-[*.{yml,yaml}]
-indent_size = 2
-indent_style = space
-max_line_length = 160
-
-[Makefile]
-indent_size = 8
-indent_style = tab
