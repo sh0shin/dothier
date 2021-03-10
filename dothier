@@ -35,7 +35,7 @@ set -o pipefail -eu
 
 # self, version, url
 readonly dothier_self="${0##*/}"
-readonly dothier_version="v0.2.1"
+readonly dothier_version="v0.2.3"
 readonly dothier_url="https://sh0shin.org/dothier"
 
 ## dothier config
@@ -203,6 +203,12 @@ dothier_mode() {
     return
   fi
 
+  # delete mode
+  if [[ "$mode" == 0000 ]]
+  then
+    return
+  fi
+
   local _mode
   _mode=$(dothier_stat "$path")
   if [[ "$_mode" != "$mode" ]]
@@ -254,6 +260,22 @@ dothier_link() {
 
   local link_src="$repo/$path"
   local link_dst="$home/$path"
+
+  # delete mode
+  if [[ "$mode" == 0000 ]]
+  then
+    if [[ -L "$link_dst" ]]
+    then
+      if [[ $dothier_remove == true ]]
+      then
+        dothier_msg w "removing link: $link_dst"
+        $dothier_runner rm "$link_dst"
+      else
+        dothier_msg w "NOT removing link: $link_dst"
+      fi
+    fi
+    return
+  fi
 
   # link
   if [[ "$type" == "link" ]]
@@ -358,6 +380,22 @@ dothier_dir() {
 
   local repo_path="$repo/$path"
   local home_path="$home/$path"
+
+  # delete mode
+  if [[ "$mode" == 0000 ]]
+  then
+    if [[ -d "$home_path" ]]
+    then
+      if [[ $dothier_remove == true ]]
+      then
+        dothier_msg w "removing dir: $home_path"
+        $dothier_runner rm -r "$home_path"
+      else
+        dothier_msg w "NOT removing dir: $home_path"
+      fi
+    fi
+    return
+  fi
 
   # repository directory
   if [[ "$type" == "rdir" ]]
