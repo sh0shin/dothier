@@ -807,7 +807,7 @@ dothier_read() {
     # link
     elif [[ "$type" =~ link ]]
     then
-      _mode="0000" # currently unused
+      _mode="0777" # currently unused
     fi
 
     # match
