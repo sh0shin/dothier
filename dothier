@@ -35,7 +35,7 @@ set -o pipefail -eu
 
 # self, version, url
 readonly dothier_self="${0##*/}"
-readonly dothier_version="v0.2.3"
+readonly dothier_version="v0.2.4"
 readonly dothier_url="https://sh0shin.org/dothier"
 
 ## dothier config
@@ -45,7 +45,6 @@ readonly dothier_url="https://sh0shin.org/dothier"
 : "${dothier_home:="$HOME"}"
 # -R
 : "${dothier_remove:=false}"
-
 # -c
 : "${dothier_config:="$HOME/.config/dothier"}"
 # -d
@@ -587,21 +586,53 @@ dothier_git() {
       gitdst_path="$(dirname "$home/$path")"
     fi
 
-    # inherit path
-    if [[ -n "$gitdst" ]]
+    # check & set gitdst gitmode gitpull gitdepth
+    if [[ $gitdst =~ ^(@)?[0-9]{4}$ ]]
     then
-      gitdst="$gitdst_path/$gitdst"
+      # mode
+      gitmode=$gitdst
+      gitdst=
     fi
 
-    if [[ -n "$gitmode" ]]
+    if [[ $gitmode =~ ^(yes|no)$ ]]
     then
-      if [[ "$gitmode" =~ ^@ ]]
-      then
-        gitmode="${gitmode##@}"
-        tmex=true
-      else
-        tmex=false
-      fi
+      # pull
+      gitpull=$gitmode
+      gitmode=
+    fi
+
+    if [[ $gitdst =~ ^(yes|no)$ ]]
+    then
+      # pull
+      gitpull=$gitdst
+      gitdst=
+    fi
+
+    if [[ $gitdst =~ ^[0-9]$ ]]
+    then
+      # depth
+      gitdepth=$gitdst
+      gitdst=
+    fi
+
+    if [[ $gitmode =~ ^[0-9]$ ]]
+    then
+      # depth
+      gitdepth=$gitmode
+      gitmode=
+    fi
+
+    if [[ $gitpull =~ ^[0-9]$ ]]
+    then
+      # depth
+      gitdepth=$gitpull
+      gitpull=
+    fi
+
+    if [[ -n "$gitdst" ]]
+    then
+      # path
+      gitdst="$gitdst_path/$gitdst"
     fi
 
     # defaults
@@ -609,6 +640,31 @@ dothier_git() {
     : "${gitmode:="$dothier_dir_mode"}"
     : "${gitpull:="yes"}"
     : "${gitdepth:="1"}"
+
+    # tmutil exclude
+    if [[ "$gitmode" =~ ^@ ]]
+    then
+      gitmode="${gitmode##@}"
+      tmex=true
+    else
+      tmex=false
+    fi
+
+    # delete mode
+    if [[ "$gitmode" == 0000 ]]
+    then
+      if [[ -d "$gitdst" ]]
+      then
+        if [[ $dothier_remove == true ]]
+        then
+          dothier_msg w "removing git: $gitdst"
+          $dothier_runner rm -r "$gitdst"
+        else
+          dothier_msg w "NOT removing git: $gitdst"
+        fi
+      fi
+      return
+    fi
 
     if [[ -d "$gitdst/.git" ]]
     then
@@ -625,7 +681,10 @@ dothier_git() {
     fi
 
     # mode
-    dothier_mode "$gitdst" "$type" "$gitmode"
+    if [[ -d "$gitdst" ]]
+    then
+      dothier_mode "$gitdst" "$type" "$gitmode"
+    fi
 
     # tmutil
     dothier_tmutil "$gitdst" "$tmex"
@@ -747,7 +806,7 @@ dothier_read() {
     # link
     elif [[ "$type" =~ link ]]
     then
-      _mode="0000" # currently unused
+      _mode="0777" # currently unused
     fi
 
     # match
