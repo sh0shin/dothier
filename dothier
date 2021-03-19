@@ -45,7 +45,6 @@ readonly dothier_url="https://sh0shin.org/dothier"
 : "${dothier_home:="$HOME"}"
 # -R
 : "${dothier_remove:=false}"
-
 # -c
 : "${dothier_config:="$HOME/.config/dothier"}"
 # -d
