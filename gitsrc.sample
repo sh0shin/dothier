@@ -1,11 +1,12 @@
 #! <git-repository-url>                 [destination]     [[@]mode] [pull]  [depth]
 
-# TODO: optional mode if pull and/or depth is used
-
 # clone the repository as name dothier
 # mode is set from umask, pull defaults to yes, depth to 1
 https://github.com/sh0shin/dothier.git
 
+# clone the repository as name dothier with mode set
+https://github.com/sh0shin/dothier.git                    0700
+
 # clone the repository as name dothier-git-src (mode: 0750)
 # macos users can use @0750 to exclude from time machine backups
-https://github.com/sh0shin/dothier.git  dothier-git-src   0750
+https://github.com/sh0shin/dothier.git  dothier-git-src   @0750
