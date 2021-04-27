@@ -34,7 +34,7 @@ install -m 0555 dothier/dothier /usr/local/bin
 
 ## Usage
 ```
-dothier v0.2.4 ( https://sh0shin.org/dothier )
+dothier v0.2.5 ( https://sh0shin.org/dothier )
 Usage: dothier [-CRghnrstv] [-f file] [-d dir] [-H home] [-k file]
 Options:
   -C      : Disable colorized output
