@@ -43,6 +43,8 @@ readonly dothier_url="https://sh0shin.org/dothier"
 : "${dothier_color:=true}"
 # -H
 : "${dothier_home:="$HOME"}"
+# -L
+: "${dothier_deadlink:=false}"
 # -R
 : "${dothier_remove:=false}"
 # -c
@@ -147,7 +149,7 @@ dothier_msg()
 # dothier_usage
 dothier_usage() {
   echo "$dothier_self $dothier_version ( $dothier_url )"
-  echo "Usage: $dothier_self [-CRghnrstv] [-f file] [-d dir] [-H home] [-k file]"
+  echo "Usage: $dothier_self [-CLRghnrstv] [-f file] [-d dir] [-H home] [-k file]"
 }
 
 # dothier_help
@@ -157,6 +159,7 @@ dothier_help() {
   echo "Options:"
   echo "  -C      : Disable colorized output"
   echo "  -H home : Home directory (default: $dothier_home)"
+  echo "  -L      : Enable dead symlink search mode"
   echo "  -R      : Enable remove/delete mode"
 
   echo "  -c conf : Use config file (default: $dothier_config)"
@@ -748,6 +751,25 @@ dothier_tmutil() {
   echo "${FUNCNAME[0]} UNHANDLED: $path $tmex"
 }
 
+# dothier_dead
+dothier_dead() {
+  local link
+
+  if [[ $dothier_deadlink == true ]]
+  then
+    while read -r link
+    do
+      if [[ $dothier_remove == true ]]
+      then
+        dothier_msg w "removing dead link: $link"
+        $dothier_runner rm "$link"
+      else
+        dothier_msg w "NOT removing dead link: $link"
+      fi
+    done < <(find "$dothier_home"/.[^.]* -type l ! -exec test -e {} \; -print)
+  fi
+}
+
 # dothier_read <file> <home>
 dothier_read() {
   local file="$1"
@@ -904,11 +926,12 @@ dothier_recursive()
 dothier_main() {
   local main_run=""
 
-  while getopts ":CH:Rc:d:f:ghk:nrstu:v" opt
+  while getopts ":CH:LRc:d:f:ghk:nrstu:v" opt
   do
     case $opt in
       C) dothier_color=false ;;
       H) dothier_home="$OPTARG";;
+      L) dothier_deadlink=true;;
       R) dothier_remove=true;;
       c) dothier_config="$OPTARG";;
       d) dothier_dir="$OPTARG";;
@@ -989,9 +1012,11 @@ dothier_main() {
       if [[ "$(type -t "$main_run")" == "function" ]]
       then
         "$main_run"
+        dothier_dead
       fi
     else
       dothier_read "$dothier_file" "$dothier_home"
+      dothier_dead
     fi
   else
     dothier_usage

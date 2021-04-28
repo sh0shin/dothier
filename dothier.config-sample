@@ -7,6 +7,9 @@
 # Home directory (-H)
 #dothier_home="$HOME"
 
+# Dead symlink search mode (-L)
+#dothier_deadlink=false
+
 # Remove/delete mode (-R)
 #dothier_remove=false
 
