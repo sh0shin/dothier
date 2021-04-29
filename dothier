@@ -564,7 +564,7 @@ dothier_git() {
 
   local giturl gitdst gitmode gitpull gitdepth
   IFS=$'\t '
-  sort -b "$repo_path" | \
+  LC_ALL=C sort -b "$repo_path" | \
   while read -r giturl gitdst gitmode gitpull gitdepth
   do
     # skip comments
@@ -790,7 +790,7 @@ dothier_read() {
   # process file
   local path type mode link tmex
   IFS=$'\t '
-  sort -b -k2,2 "$file" | \
+  LC_ALL=C sort -b -k2,2 "$file" | \
   while read -r path type mode link
   do
     # skip comments
