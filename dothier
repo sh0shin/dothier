@@ -925,6 +925,7 @@ dothier_recursive()
 # dothier_main
 dothier_main() {
   local main_run=""
+  local config
 
   while getopts ":CH:LRc:d:f:ghk:nrstu:v" opt
   do
@@ -974,15 +975,29 @@ dothier_main() {
   # config
   if [[ -f "$dothier_config" ]]
   then
-    # TODO: check config
-    # shellcheck source=/dev/null
-    source "$dothier_config"
+    # config parse
     dothier_msg n "config: $dothier_config"
+
+    config=$(mktemp "${TMPDIR:-/tmp}/dothier.XXXXXXXX")
+    grep -E "^dothier_[a-z]+=.*$" "$dothier_config" > "$config"
+    dothier_msg v "parsed: $config"
+
+    if [[ -e "$config" ]]
+    then
+      # shellcheck source=/dev/null
+      source "$config"
+
+      dothier_msg v "clean: $config"
+      rm -f "$config"
+    else
+      dothier_msg e "config: $config not readable!"
+      return 1
+    fi
   else
     if [[ "$dothier_config" != "$HOME/.config/dothier" ]]
     then
       dothier_msg e "config not found: $dothier_config"
-      return
+      return 1
     fi
   fi
 
