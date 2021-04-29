@@ -35,7 +35,7 @@ set -o pipefail -eu
 
 # self, version, url
 readonly dothier_self="${0##*/}"
-readonly dothier_version="v0.2.4"
+readonly dothier_version="v0.2.5"
 readonly dothier_url="https://sh0shin.org/dothier"
 
 ## dothier config
@@ -43,6 +43,8 @@ readonly dothier_url="https://sh0shin.org/dothier"
 : "${dothier_color:=true}"
 # -H
 : "${dothier_home:="$HOME"}"
+# -L
+: "${dothier_deadlink:=false}"
 # -R
 : "${dothier_remove:=false}"
 # -c
@@ -147,7 +149,7 @@ dothier_msg()
 # dothier_usage
 dothier_usage() {
   echo "$dothier_self $dothier_version ( $dothier_url )"
-  echo "Usage: $dothier_self [-CRghnrstv] [-f file] [-d dir] [-H home] [-k file]"
+  echo "Usage: $dothier_self [-CLRghnrstv] [-f file] [-d dir] [-H home] [-k file]"
 }
 
 # dothier_help
@@ -157,6 +159,7 @@ dothier_help() {
   echo "Options:"
   echo "  -C      : Disable colorized output"
   echo "  -H home : Home directory (default: $dothier_home)"
+  echo "  -L      : Enable dead symlink search mode"
   echo "  -R      : Enable remove/delete mode"
 
   echo "  -c conf : Use config file (default: $dothier_config)"
@@ -187,7 +190,7 @@ dothier_stat() {
       ;;
   esac
 
-  echo "$stat"
+  echo "${stat:(-4)}"
 }
 
 # dothier_mode <path> <type> <mode>
@@ -237,7 +240,7 @@ dothier_crypt() {
 
   if [[ -n "$dothier_key" ]]
   then
-    if grep -rq "\x00GITCRYPT" "$path"
+    if grep -Frq "\x00GITCRYPT" "$path"
     then
       dothier_msg i "unlock: $repo"
       ( $dothier_runner cd "$repo" && \
@@ -561,7 +564,7 @@ dothier_git() {
 
   local giturl gitdst gitmode gitpull gitdepth
   IFS=$'\t '
-  sort -b "$repo_path" | \
+  LC_ALL=C sort -b "$repo_path" | \
   while read -r giturl gitdst gitmode gitpull gitdepth
   do
     # skip comments
@@ -748,6 +751,25 @@ dothier_tmutil() {
   echo "${FUNCNAME[0]} UNHANDLED: $path $tmex"
 }
 
+# dothier_dead
+dothier_dead() {
+  local link
+
+  if [[ $dothier_deadlink == true ]]
+  then
+    while read -r link
+    do
+      if [[ $dothier_remove == true ]]
+      then
+        dothier_msg w "removing dead link: $link"
+        $dothier_runner rm "$link"
+      else
+        dothier_msg w "NOT removing dead link: $link"
+      fi
+    done < <(find "$dothier_home"/.[^.]* -type l ! -exec test -e {} \; -print)
+  fi
+}
+
 # dothier_read <file> <home>
 dothier_read() {
   local file="$1"
@@ -758,7 +780,7 @@ dothier_read() {
     dothier_msg e "not found: $file"
     return
   else
-    dothier_msg n "$file"
+    dothier_msg n "file: $file"
   fi
 
   # get repo from file
@@ -768,7 +790,7 @@ dothier_read() {
   # process file
   local path type mode link tmex
   IFS=$'\t '
-  sort -b -k2,2 "$file" | \
+  LC_ALL=C sort -b -k2,2 "$file" | \
   while read -r path type mode link
   do
     # skip comments
@@ -903,12 +925,14 @@ dothier_recursive()
 # dothier_main
 dothier_main() {
   local main_run=""
+  local config
 
-  while getopts ":CH:Rc:d:f:ghk:nrstu:v" opt
+  while getopts ":CH:LRc:d:f:ghk:nrstu:v" opt
   do
     case $opt in
       C) dothier_color=false ;;
       H) dothier_home="$OPTARG";;
+      L) dothier_deadlink=true;;
       R) dothier_remove=true;;
       c) dothier_config="$OPTARG";;
       d) dothier_dir="$OPTARG";;
@@ -951,15 +975,29 @@ dothier_main() {
   # config
   if [[ -f "$dothier_config" ]]
   then
-    # TODO: check config
-    # shellcheck source=/dev/null
-    source "$dothier_config"
+    # config parse
     dothier_msg n "config: $dothier_config"
+
+    config=$(mktemp "${TMPDIR:-/tmp}/dothier.XXXXXXXX")
+    grep -E "^dothier_[a-z]+=.*$" "$dothier_config" > "$config"
+    dothier_msg v "parsed: $config"
+
+    if [[ -e "$config" ]]
+    then
+      # shellcheck source=/dev/null
+      source "$config"
+
+      dothier_msg v "clean: $config"
+      rm -f "$config"
+    else
+      dothier_msg e "config: $config not readable!"
+      return 1
+    fi
   else
     if [[ "$dothier_config" != "$HOME/.config/dothier" ]]
     then
       dothier_msg e "config not found: $dothier_config"
-      return
+      return 1
     fi
   fi
 
@@ -989,9 +1027,11 @@ dothier_main() {
       if [[ "$(type -t "$main_run")" == "function" ]]
       then
         "$main_run"
+        dothier_dead
       fi
     else
       dothier_read "$dothier_file" "$dothier_home"
+      dothier_dead
     fi
   else
     dothier_usage

@@ -34,11 +34,12 @@ install -m 0555 dothier/dothier /usr/local/bin
 
 ## Usage
 ```
-dothier v0.2.4 ( https://sh0shin.org/dothier )
-Usage: dothier [-CRghnrstv] [-f file] [-d dir] [-H home] [-k file]
+dothier v0.2.5 ( https://sh0shin.org/dothier )
+Usage: dothier [-CLRghnrstv] [-f file] [-d dir] [-H home] [-k file]
 Options:
   -C      : Disable colorized output
   -H home : Home directory (default: $HOME)
+  -L      : Enable dead symlink search mode
   -R      : Enable remove/delete mode
   -c conf : Use config file (default: $HOME/.config/dothier)
   -d dir  : Use directory for recursive mode (default: $HOME/.dotfiles)
