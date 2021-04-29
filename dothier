@@ -780,7 +780,7 @@ dothier_read() {
     dothier_msg e "not found: $file"
     return
   else
-    dothier_msg n "$file"
+    dothier_msg n "file: $file"
   fi
 
   # get repo from file
