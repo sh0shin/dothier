@@ -190,7 +190,7 @@ dothier_stat() {
       ;;
   esac
 
-  echo "$stat"
+  echo "${stat:(-4)}"
 }
 
 # dothier_mode <path> <type> <mode>
