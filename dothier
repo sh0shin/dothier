@@ -311,6 +311,19 @@ dothier_link() {
       return
     fi
 
+  # broken link
+  elif [[ -L "$link_dst" ]] && [[ ! -e "$link_dst" ]]
+  then
+    # remove
+    if [[ $dothier_remove == true ]]
+    then
+      dothier_msg w "removing broken link: $link_dst"
+      $dothier_runner rm "$link_dst"
+    else
+      dothier_msg w "broken link: $link_dst"
+      return
+    fi
+
   elif [[ -e "$link_dst" ]]
   then
     # link
