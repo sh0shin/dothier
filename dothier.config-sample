@@ -28,6 +28,9 @@
 # Dry-run (-n)
 #dothier_dryrun=false
 
+# Be quiet (-q)
+#dothier_quiet=false
+
 # Recursive mode (-r)
 #dothier_recursive=false
 
