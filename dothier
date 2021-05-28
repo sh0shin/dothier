@@ -62,7 +62,6 @@ readonly dothier_url="https://sh0shin.org/dothier"
 : "${dothier_runner:="command"}"
 # -q
 : "${dothier_quiet:=false}"
-: "${dothier_git_quiet:=}"
 # -r
 : "${dothier_recursive:=false}"
 # -s
@@ -575,6 +574,15 @@ dothier_git() {
   local repo_path="$repo/$path"
   local home_path="$home/$path"
 
+  # quiet
+  local gitquiet
+  if [[ $dothier_quiet == true ]]
+  then
+    gitquiet="--quiet"
+  else
+    gitquiet=""
+  fi
+
   # process git file
   if [[ ! -e "$repo_path" ]]
   then
@@ -694,13 +702,13 @@ dothier_git() {
       if [[ "$gitpull" == "yes" ]] && [[ $dothier_gitpull == true ]]
       then
         dothier_msg i "pull: $gitdst"
-        $dothier_runner git --git-dir="$gitdst/.git" --work-tree="$gitdst" pull $dothier_git_quiet
+        $dothier_runner git --git-dir="$gitdst/.git" --work-tree="$gitdst" pull $gitquiet
       else
         dothier_msg v "ok: $gitdst"
       fi
     else
       dothier_msg i "clone: $giturl $gitdst"
-      $dothier_runner git clone --depth="$gitdepth" "$giturl" "$gitdst" $dothier_git_quiet
+      $dothier_runner git clone --depth="$gitdepth" "$giturl" "$gitdst" $gitquiet
     fi
 
     # mode
@@ -967,10 +975,7 @@ dothier_main() {
         dothier_dryrun=true
         dothier_runner="echo -e \t(dry-run): "
         ;;
-      q)
-        dothier_quiet=true
-        dothier_git_quiet="--quiet"
-        ;;
+      q) dothier_quiet=true;;
       r) main_run="dothier_recursive";;
       s) dothier_shortmsg=true;;
       t) dothier_tmutil=true;;
