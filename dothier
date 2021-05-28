@@ -35,7 +35,7 @@ set -o pipefail -eu
 
 # self, version, url
 readonly dothier_self="${0##*/}"
-readonly dothier_version="v0.2.6"
+readonly dothier_version="v0.2.7"
 readonly dothier_url="https://sh0shin.org/dothier"
 
 ## dothier config
@@ -60,6 +60,9 @@ readonly dothier_url="https://sh0shin.org/dothier"
 # -n
 : "${dothier_dryrun:=false}"
 : "${dothier_runner:="command"}"
+# -q
+: "${dothier_quiet:=false}"
+: "${dothier_git_quiet:=}"
 # -r
 : "${dothier_recursive:=false}"
 # -s
@@ -127,14 +130,17 @@ dothier_msg()
 
     e|error|3)    color="$color_error";;
     w|warning|4)  color="$color_warning";;
-    n|notice|5)   color="$color_notice";;
-    i|info|6)     color="$color_info";;
+    n|notice|5)   [[ $dothier_quiet == true ]] && return
+                  color="$color_notice"
+                  ;;
+    i|info|6)     [[ $dothier_quiet == true ]] && return
+                  color="$color_info"
+                  ;;
     d|debug|7)    color="$color_debug";;
 
     v|verbose)    [[ $dothier_verbose == false ]] && return
                   color="$color_info"
                   ;;
-
     *)            color="$color_misc";;
   esac
 
@@ -149,7 +155,7 @@ dothier_msg()
 # dothier_usage
 dothier_usage() {
   echo "$dothier_self $dothier_version ( $dothier_url )"
-  echo "Usage: $dothier_self [-CLRghnrstv] [-f file] [-d dir] [-H home] [-k file]"
+  echo "Usage: $dothier_self [-CLRghnqrstv] [-f file] [-d dir] [-H home] [-k file]"
 }
 
 # dothier_help
@@ -169,6 +175,7 @@ dothier_help() {
   echo "  -h      : Show this help"
   echo "  -k file : Use git-crypt key file"
   echo "  -n      : Dry-run"
+  echo "  -q      : Be quiet"
   echo "  -r      : Enable recursive mode"
   echo "  -s      : Short message mode"
   echo "  -t      : Enable tmutil (macOS only)"
@@ -687,13 +694,13 @@ dothier_git() {
       if [[ "$gitpull" == "yes" ]] && [[ $dothier_gitpull == true ]]
       then
         dothier_msg i "pull: $gitdst"
-        $dothier_runner git --git-dir="$gitdst/.git" --work-tree="$gitdst" pull --quiet
+        $dothier_runner git --git-dir="$gitdst/.git" --work-tree="$gitdst" pull $dothier_git_quiet
       else
         dothier_msg v "ok: $gitdst"
       fi
     else
       dothier_msg i "clone: $giturl $gitdst"
-      $dothier_runner git clone --quiet --depth="$gitdepth" "$giturl" "$gitdst"
+      $dothier_runner git clone --depth="$gitdepth" "$giturl" "$gitdst" $dothier_git_quiet
     fi
 
     # mode
@@ -940,7 +947,7 @@ dothier_main() {
   local main_run=""
   local config
 
-  while getopts ":CH:LRc:d:f:ghk:nrstu:v" opt
+  while getopts ":CH:LRc:d:f:ghk:nqrstu:v" opt
   do
     case $opt in
       C) dothier_color=false ;;
@@ -951,7 +958,6 @@ dothier_main() {
       d) dothier_dir="$OPTARG";;
       f) dothier_file="$OPTARG";;
       g) dothier_gitpull=true;;
-
       h)
         dothier_help
         exit 0
@@ -961,13 +967,15 @@ dothier_main() {
         dothier_dryrun=true
         dothier_runner="echo -e \t(dry-run): "
         ;;
-
+      q)
+        dothier_quiet=true
+        dothier_git_quiet="--quiet"
+        ;;
       r) main_run="dothier_recursive";;
       s) dothier_shortmsg=true;;
       t) dothier_tmutil=true;;
       u) dothier_umask="$OPTARG";;
       v) dothier_verbose=true;;
-
       :)
         echo "-${OPTARG} required argument missing!"
         dothier_usage
