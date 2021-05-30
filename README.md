@@ -34,8 +34,8 @@ install -m 0555 dothier/dothier /usr/local/bin
 
 ## Usage
 ```
-dothier v0.2.6 ( https://sh0shin.org/dothier )
-Usage: dothier [-CLRghnrstv] [-f file] [-d dir] [-H home] [-k file]
+dothier v0.2.7 ( https://sh0shin.org/dothier )
+Usage: dothier [-CLRghnqrstv] [-f file] [-d dir] [-H home] [-k file]
 Options:
   -C      : Disable colorized output
   -H home : Home directory (default: $HOME)
@@ -48,6 +48,7 @@ Options:
   -h      : Show this help
   -k file : Use git-crypt key file
   -n      : Dry-run
+  -q      : Be quiet
   -r      : Enable recursive mode
   -s      : Short message mode
   -t      : Enable tmutil (macOS only)
