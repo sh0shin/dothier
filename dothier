@@ -1005,8 +1005,7 @@ dothier_main() {
   if [[ -f "$dothier_config" ]]
   then
     # config parse
-    dothier_msg n "config: $dothier_config"
-
+    dothier_msg v "config: $dothier_config"
     config=$(mktemp "${TMPDIR:-/tmp}/dothier.XXXXXXXX")
     grep -E "^dothier_[a-z]+=.*$" "$dothier_config" > "$config"
     dothier_msg v "parsed: $config"
@@ -1015,6 +1014,11 @@ dothier_main() {
     then
       # shellcheck source=/dev/null
       source "$config"
+
+      if [[ $dothier_recursive == true ]]
+      then
+        main_run="dothier_recursive"
+      fi
 
       dothier_msg v "clean: $config"
       rm -f "$config"
@@ -1043,28 +1047,21 @@ dothier_main() {
     dothier_home="$PWD/$dothier_home"
   fi
 
+  # create home
   if [[ ! -d "$dothier_home" ]]
   then
     dothier_msg w "creating: $dothier_home"
     $dothier_runner mkdir -m "$dothier_dir_mode" "$dothier_home"
   fi
 
-  if [[ "$OPTIND" -ge 2 ]]
+  # run
+  if [[ -n "$main_run" ]] && [[ "$(type -t "$main_run")" == "function" ]]
   then
-    if [[ -n "$main_run" ]]
-    then
-      if [[ "$(type -t "$main_run")" == "function" ]]
-      then
-        "$main_run"
-        dothier_dead
-      fi
-    else
-      dothier_read "$dothier_file" "$dothier_home"
-      dothier_dead
-    fi
+    "$main_run"
+    dothier_dead
   else
-    dothier_usage
-    exit 2
+    dothier_read "$dothier_file" "$dothier_home"
+    dothier_dead
   fi
 }
 
