@@ -806,6 +806,7 @@ dothier_read() {
   if [[ ! -e "$file" ]]
   then
     dothier_msg e "not found: $file"
+    dothier_usage
     return
   else
     dothier_msg n "file: $file"
