@@ -574,15 +574,6 @@ dothier_git() {
   local repo_path="$repo/$path"
   local home_path="$home/$path"
 
-  # quiet
-  local gitquiet
-  if [[ $dothier_quiet == true ]]
-  then
-    gitquiet="--quiet"
-  else
-    gitquiet=""
-  fi
-
   # process git file
   if [[ ! -e "$repo_path" ]]
   then
@@ -697,18 +688,31 @@ dothier_git() {
       return
     fi
 
+    local gitcmd=""
+    local gitopts
     if [[ -d "$gitdst/.git" ]]
     then
       if [[ "$gitpull" == "yes" ]] && [[ $dothier_gitpull == true ]]
       then
-        dothier_msg i "pull: $gitdst"
-        $dothier_runner git --git-dir="$gitdst/.git" --work-tree="$gitdst" pull $gitquiet
+        gitcmd="pull"
+        gitopts=(--git-dir="$gitdst/.git" --work-tree="$gitdst" "$gitcmd")
       else
         dothier_msg v "ok: $gitdst"
       fi
     else
-      dothier_msg i "clone: $giturl $gitdst"
-      $dothier_runner git clone --depth="$gitdepth" "$giturl" "$gitdst" $gitquiet
+      gitcmd="clone"
+      gitopts=("$gitcmd" --depth="$gitdepth" "$giturl" "$gitdst")
+    fi
+
+    if [[ $dothier_quiet == true ]]
+    then
+      gitopts+=(--quiet)
+    fi
+
+    if [[ -n "$gitcmd" ]]
+    then
+      dothier_msg i "$gitcmd: $gitdst"
+      $dothier_runner git "${gitopts[@]}"
     fi
 
     # mode
