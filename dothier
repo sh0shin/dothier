@@ -980,7 +980,10 @@ dothier_main() {
       s) dothier_shortmsg=true;;
       t) dothier_tmutil=true;;
       u) dothier_umask="$OPTARG";;
-      v) dothier_verbose=true;;
+      v)
+        dothier_verbose=true
+        dothier_quiet=false
+        ;;
       :)
         echo "-${OPTARG} required argument missing!"
         dothier_usage
