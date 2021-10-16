@@ -246,7 +246,7 @@ dothier_crypt() {
 
   if [[ -n "$dothier_key" ]]
   then
-    if grep -Frq "\x00GITCRYPT" "$path"
+    if grep -Frq "\x00GITCRYPT" "$path" || grep -qsPa "\x00GITCRYPT" "$path"
     then
       dothier_msg i "unlock: $repo"
       ( $dothier_runner cd "$repo" && \
