@@ -35,7 +35,7 @@ set -o pipefail -eu
 
 # self, version, url
 readonly dothier_self="${0##*/}"
-readonly dothier_version="v0.2.7"
+readonly dothier_version="v0.2.8"
 readonly dothier_url="https://sh0shin.org/dothier"
 
 ## dothier config
@@ -246,7 +246,7 @@ dothier_crypt() {
 
   if [[ -n "$dothier_key" ]]
   then
-    if grep -Frq "\x00GITCRYPT" "$path"
+    if grep -rq "\x00GITCRYPT" "$path" || grep -qsPa "\x00GITCRYPT" "$path"
     then
       dothier_msg i "unlock: $repo"
       ( $dothier_runner cd "$repo" && \
