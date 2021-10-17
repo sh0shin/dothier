@@ -6,22 +6,6 @@ one simple command.
 [![GitHub Release](https://img.shields.io/github/v/release/sh0shin/dothier)](https://github.com/sh0shin/dothier/releases)
 [![GitHub License](https://img.shields.io/github/license/sh0shin/dothier)](https://github.com/sh0shin/dothier/blob/master/LICENSE)
 
-## Notes
-
-**v0.2.1+ is using different `.hier` properties!**
-
-* `mode` is now optional (**experimental**)
-
-* `l(type)` is now `r(type)` to represent repository type.
-  * `ldir` -> `rdir`
-  * `lfile` -> `rfile`
-  * `lgit` -> `rgit`
-
-* `.gitsrc` files are now treated as `rfile`.
-  * `pull` & `depth` properties were moved to the `.gitsrc` file itself.
-
-* Some options changed, see: [Usage](#usage).
-
 ## Installation
 
 The only supported package manger for now is [homebrew](https://brew.sh).
