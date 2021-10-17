@@ -54,7 +54,7 @@ dothier                       rfile   0750
 
 # git repositories
 # clone/pull git repositories to/from ~/.dotfiles/<name>
-.gitsrc                       rgit    0600
+.hiergit                      rgit    0600
 
 # clone/pull git repositories to/from ~/<name>
-.gitsrc                       git     0600
+.hiergit                      git     0600

@@ -66,7 +66,7 @@ git remote add origin <repo.url>
 ```
 
 * `.hier` file (see: [hier.sample](hier.sample))
-* `.gitsrc` file (see: [gitsrc.sample](gitsrc.sample))
+* `.hiergit` file (see: [hiergit.sample](hiergit.sample))
 
 ### Deploy your dotfiles
 
