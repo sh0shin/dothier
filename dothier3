@@ -39,41 +39,17 @@ readonly DH_SELF_PATH="${DH_SELF_FILE%/*}"
 readonly DH_SELF_VERSION="v0.3.0"
 readonly DH_SELF_URL="https://sh0shin.org/dothier"
 
-# -C
-declare DH_COLOR="${DOTHIER_COLOR:-true}"
-# -H
-declare DH_HOME="${DOTHIER_HOME:-"$HOME"}"
-
-declare DH_CONFIG="${DOTHIER_CONFIG:-"${HOME}/.config/dothier"}"
-declare DH_ROOT="${DOTHIER_ROOT:-"${DH_HOME}/.dotfiles"}"
-
-# -f
-declare DH_HIER_FILE="${DOTHIER_HIER_FILE:-".hier"}"
-
-
-declare DH_UMASK="${DOTHIER_UMASK:-"$( umask )"}"
-declare DH_DMODE="0755"
-declare DH_FMODE="0644"
-
-declare DH_DRYRUN="${DOTHIER_DRYRUN:-false}"
-declare DH_RUN="command"
-
-# -q
-declare DH_QUIET="${DOTHIER_QUIET:-false}"
-# -r
-declare DH_RECURSIVE="${DOTHIER_RECURSIVE:-false}"
-# -s
-declare DH_SHORTMSG="${DOTHIER_SHORTMSG:-false}"
-# -v
-declare DH_VERBOSE="${DOTHIER_VERBOSE:-false}"
-
 __dothier_msg() {
   local DH_LEVEL="$1"
   shift
   local -a DH_MSG=( "$@" )
 
   local _MSG="${DH_MSG[*]}"
-  local _NAME="${FUNCNAME[1]#__dothier_*}"
+  local _NAME
+
+  _NAME="${FUNCNAME[1]#__dothier_*}"
+  _NAME="${_NAME//__dothier/dothier}"
+
   local _COLOR=""
   local _NOCOLOR=""
 
@@ -107,14 +83,14 @@ __dothier_msg() {
         _COLOR="\033[0;36m"
       ;;
       d|debug)
-        if [[ $DH_QUIET == true ]]
+        if [[ $DH_QUIET == true ]] || [[ $DH_VERBOSE == false ]]
         then
           return
         fi
         _COLOR="\033[0;36m"
       ;;
       v|verbose)
-        if [[ $DH_VERBOSE == false ]]
+        if [[ $DH_QUIET == true ]] || [[ $DH_VERBOSE == false ]]
         then
           return
         fi
@@ -217,6 +193,12 @@ __dothier_link() {
   fi
 } #__dothier_link
 
+__dothier_tmutil() {
+  local DH_PATH="$1"
+
+  __dothier_msg d "tmutil: $DH_PATH"
+}
+
 __dothier_proc() {
   local DH_TYPE="$1"
   shift
@@ -259,13 +241,16 @@ __dothier_proc() {
       then
         __dothier_msg i "git clone: $_PATH $_DST"
         echo -ne '\033[0;35m'
-        #git clone --depth 1 "$_PATH" "$_DST"
+        git clone --depth "$DH_GIT_DEPTH" "$_PATH" "$_DST"
         echo -ne '\033[0m'
       else
-        __dothier_msg i "git pull: $_DST"
-        echo -ne '\033[0;35m'
-        #git -C "$_DST" pull
-        echo -ne '\033[0m'
+        if [[ "$DH_GIT_PULL" == true ]]
+        then
+          __dothier_msg i "git pull: $_DST"
+          echo -ne '\033[0;35m'
+          git -C "$_DST" pull
+          echo -ne '\033[0m'
+        fi
       fi
     fi
 
@@ -331,9 +316,9 @@ __dothier_proc() {
       __dothier_link "$_SRC" "$_DST" "$_MODE"
     fi
 
-    if [[ "$_TMEX" == "true" ]]
+    if [[ "$DH_TMUTIL" == true ]]
     then
-      __dothier_msg d "tmutil: $_DST"
+      __dothier_tmutil "$_DST" "$_TMEX"
     fi
 
   done
@@ -475,22 +460,87 @@ __dothier_read() {
   return
 } #__dothier_read
 
-__dothier() {
+# -C
+declare DH_COLOR="${DOTHIER_COLOR:-true}"
+# -G
+declare DH_GIT_PULL="${DOTHIER_GIT_PULL:-false}"
+declare DH_GIT_DEPTH="${DOTHIER_GIT_DEPTH:-1}"
+# -H
+declare DH_HOME="${DOTHIER_HOME:-"$HOME"}"
+# -R
+declare DH_REMOVE="${DOTHIER_REMOVE:-false}"
+# -S
+declare DH_SHORTMSG="${DOTHIER_SHORTMSG:-false}"
+# -T
+declare DH_TMUTIL="${DOTHIER_TMUTIL:-false}"
 
-  while getopts ":CH:LRc:d:f:ghk:nqrstu:v" OPT
+# -c
+declare DH_CONFIG="${DOTHIER_CONFIG:-"${HOME}/.config/dothier"}"
+# -d
+declare DH_ROOT="${DOTHIER_ROOT:-"${DH_HOME}/.dotfiles"}"
+
+# -f
+declare DH_HIER_FILE="${DOTHIER_HIER_FILE:-".hier"}"
+
+
+declare DH_UMASK="${DOTHIER_UMASK:-"$( umask )"}"
+declare DH_DMODE="0755"
+declare DH_FMODE="0644"
+
+declare DH_DRYRUN="${DOTHIER_DRYRUN:-false}"
+declare DH_RUN="command"
+
+# -q
+declare DH_QUIET="${DOTHIER_QUIET:-false}"
+# -r
+declare DH_RECURSIVE="${DOTHIER_RECURSIVE:-false}"
+# -v
+declare DH_VERBOSE="${DOTHIER_VERBOSE:-false}"
+
+__dothier() {
+  while getopts ":CGH:LRSc:d:f:ghk:nqrstu:v" OPT
   do
     case "$OPT"
     in
-      C)  DH_COLOR=false;;
-      H)  DH_HOME="$OPTARG" ;;
-
-      h)  __dothier_help; exit 0 ;;
-
-      q)  DH_QUIET=true ;;
-      r)  DH_RECURSIVE=true ;;
-
-      :)  echo "option: -${OPTARG} required argument missing!"; __dothier_usage; exit 2 ;;
-      ?)  echo "option: -${OPTARG} is unknown!"; __dothier_usage; exit 2 ;;
+      C)
+        DH_COLOR=false
+      ;;
+      G)
+        DH_GIT_PULL=true
+      ;;
+      H)
+        DH_HOME="$OPTARG"
+      ;;
+      S)
+        DH_SHORTMSG=true
+      ;;
+      c)
+        DH_CONFIG="$OPTARG"
+      ;;
+      d)
+        DH_ROOT="$OPTARG"
+      ;;
+      h)
+        __dothier_help
+        exit 0
+      ;;
+      q)
+        DH_QUIET=true
+      ;;
+      r)
+        DH_RECURSIVE=true
+      ;;
+      v)
+        DH_VERBOSE=true
+      ;;
+      :)
+        __dothier_msg e "option: -${OPTARG} required argument missing!"
+        exit 1
+      ;;
+      ?)
+        __dothier_msg e "option: -${OPTARG} is unknown!"
+        exit 1
+      ;;
     esac
   done
 
