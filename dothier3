@@ -1,0 +1,530 @@
+#!/usr/bin/env bash
+# vim: set ft=sh :
+
+# BSD 3-Clause License
+#
+# Copyright (c) 2020-2022, Chris 'sh0shin' Frage
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# * Neither the name of the copyright holder nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+set -o pipefail -eu
+
+readonly DH_SELF_FILE="${BASH_SOURCE[0]}"
+readonly DH_SELF_NAME="${DH_SELF_FILE##*/}"
+readonly DH_SELF_PATH="${DH_SELF_FILE%/*}"
+readonly DH_SELF_VERSION="v0.3.0"
+readonly DH_SELF_URL="https://sh0shin.org/dothier"
+
+# -C
+declare DH_COLOR="${DOTHIER_COLOR:-true}"
+# -H
+declare DH_HOME="${DOTHIER_HOME:-"$HOME"}"
+
+declare DH_CONFIG="${DOTHIER_CONFIG:-"${HOME}/.config/dothier"}"
+declare DH_ROOT="${DOTHIER_ROOT:-"${DH_HOME}/.dotfiles"}"
+
+# -f
+declare DH_HIER_FILE="${DOTHIER_HIER_FILE:-".hier"}"
+
+
+declare DH_UMASK="${DOTHIER_UMASK:-"$( umask )"}"
+declare DH_DMODE="0755"
+declare DH_FMODE="0644"
+
+declare DH_DRYRUN="${DOTHIER_DRYRUN:-false}"
+declare DH_RUN="command"
+
+# -q
+declare DH_QUIET="${DOTHIER_QUIET:-false}"
+# -r
+declare DH_RECURSIVE="${DOTHIER_RECURSIVE:-false}"
+# -s
+declare DH_SHORTMSG="${DOTHIER_SHORTMSG:-false}"
+# -v
+declare DH_VERBOSE="${DOTHIER_VERBOSE:-false}"
+
+__dothier_msg() {
+  local DH_LEVEL="$1"
+  shift
+  local -a DH_MSG=( "$@" )
+
+  local _MSG="${DH_MSG[*]}"
+  local _NAME="${FUNCNAME[1]#__dothier_*}"
+  local _COLOR=""
+  local _NOCOLOR=""
+
+  if [[ "$DH_SHORTMSG" == true ]]
+  then
+    _MSG="${_MSG//${HOME}/\~}"
+  fi
+
+  if [[ "$DH_COLOR" == true ]]
+  then
+    case "$DH_LEVEL"
+    in
+      e|error)
+        _COLOR="\033[1;31m"
+      ;;
+      w|warning)
+        _COLOR="\033[0;33m"
+      ;;
+      n|notice)
+        if [[ $DH_QUIET == true ]]
+        then
+          return
+        fi
+        _COLOR="\033[0;37m"
+      ;;
+      i|info)
+        if [[ $DH_QUIET == true ]]
+        then
+          return
+        fi
+        _COLOR="\033[0;36m"
+      ;;
+      d|debug)
+        if [[ $DH_QUIET == true ]]
+        then
+          return
+        fi
+        _COLOR="\033[0;36m"
+      ;;
+      v|verbose)
+        if [[ $DH_VERBOSE == false ]]
+        then
+          return
+        fi
+        _COLOR="\033[0;36m"
+      ;;
+      *)
+        _COLOR="\033[0;34m"
+      ;;
+    esac
+    _NOCOLOR="\033[0m"
+  fi
+
+  >&2 echo -e "${_COLOR}${_NAME}\t${_MSG}${_NOCOLOR}"
+  return
+} #__dothier_msg
+
+__dothier_usage() {
+  echo "$DH_SELF_NAME $DH_SELF_VERSION ( $DH_SELF_URL )"
+} #__dothier_usage
+
+__dothier_help() {
+  __dothier_usage
+} #__dothier_help
+
+__dothier_stat() {
+  local DH_PATH="$1"
+  local DH_STAT
+
+  case "$OSTYPE"
+  in
+    darwin*|freebsd*|openbsd*)
+      DH_STAT="$( stat -f "%Mp%Lp" "$DH_PATH" )"
+    ;;
+    linux*)
+      DH_STAT="$( stat -c "%#a" "$DH_PATH" )"
+    ;;
+  esac
+
+  echo "${DH_STAT:(-4)}"
+} #__dothier_stat
+
+# <path> <mode>
+__dothier_mode() {
+  local DH_PATH="$1"
+  local DH_MODE="$2"
+  local _MODE
+
+  if [[ "$DH_MODE" == "0000" ]]
+  then
+    if [[ -d "$DH_PATH" ]]
+    then
+      __dothier_msg d "rmdir: $DH_PATH"
+    elif [[ -L "$DH_PATH" ]]
+    then
+      __dothier_msg d "rmlink: $DH_PATH"
+    elif [[ -f "$DH_PATH" ]]
+    then
+      __dothier_msg d "rmfile: $DH_PATH"
+    fi
+  else
+    _MODE="$( __dothier_stat "$DH_PATH" )"
+
+    if [[ "$_MODE" != "$DH_MODE" ]]
+    then
+      __dothier_msg w "chmod: $DH_MODE $DH_PATH ($_MODE)"
+      chmod "$DH_MODE" "$DH_PATH"
+    fi
+  fi
+} #__dothier_mode
+
+# <src> <dst> <mode>
+__dothier_link() {
+  local _SRC="$1"
+  local _DST="$2"
+  local _MODE="$3"
+  local _LINK
+
+  # absolute
+  if [[ "$_SRC" =~ \~ ]]
+  then
+    _SRC="${_SRC//\~/$HOME}"
+  fi
+
+  if [[ -L "$_DST" ]] && [[ "$_MODE" == "0000" ]]
+  then
+    __dothier_mode "$_DST" "$_MODE"
+
+  elif [[ -L "$_DST" ]]
+  then
+    _LINK=$( readlink "$_DST" )
+
+    if [[ "$_LINK" != "$_SRC" ]]
+    then
+      __dothier_msg w "link: wrong $_LINK ($_SRC)"
+    fi
+
+  elif [[ ! -L "$_DST" ]] && [[ "$_MODE" != "0000" ]]
+  then
+    __dothier_msg d "link: $_SRC $_DST"
+  fi
+} #__dothier_link
+
+__dothier_proc() {
+  local DH_TYPE="$1"
+  shift
+  local DH_REPO="$1"
+  shift
+  local -a DH_PROC=( "$@" )
+
+  for _PROC in "${DH_PROC[@]}"
+  do
+    read -r _PATH _MODE _LINK _TMEX <<< "$_PROC"
+
+    # rgit|git
+    if [[ "$DH_TYPE" =~ ^(rgit|git)$ ]]
+    then
+      if [[ "$DH_TYPE" == "rgit" ]]
+      then
+        # default destination from url
+        if [[ "$_LINK" =~ (no|false) ]]
+        then
+          _DST="${DH_REPO}/${_PATH##*/}"
+          _DST="${_DST//.git}"
+        else
+          _DST="${DH_REPO}/${_LINK}"
+        fi
+      fi
+
+      if [[ "$DH_TYPE" == "git" ]]
+      then
+        # default destination from url
+        if [[ "$_LINK" =~ (no|false) ]]
+        then
+          _DST="${DH_HOME}/${_PATH##*/}"
+          _DST="${_DST//.git}"
+        else
+          _DST="${DH_HOME}/${_LINK}"
+        fi
+      fi
+
+      if [[ ! -d "$_DST" ]]
+      then
+        __dothier_msg i "git clone: $_PATH $_DST"
+        echo -ne '\033[0;35m'
+        #git clone --depth 1 "$_PATH" "$_DST"
+        echo -ne '\033[0m'
+      else
+        __dothier_msg i "git pull: $_DST"
+        echo -ne '\033[0;35m'
+        #git -C "$_DST" pull
+        echo -ne '\033[0m'
+      fi
+    fi
+
+    # rdir
+    if [[ "$DH_TYPE" == "rdir" ]]
+    then
+      _DST="${DH_REPO}/${_PATH}"
+      _SRC="$_DST"
+
+      if [[ -d "$_DST" ]]
+      then
+        __dothier_mode "$_DST" "$_MODE"
+      fi
+    fi
+
+    # dir
+    if [[ "$DH_TYPE" == "dir" ]]
+    then
+      _DST="${DH_HOME}/${_PATH}"
+      _SRC="${DH_REPO}/${_PATH}"
+
+      if [[ ! -d "$_DST" ]] && [[ ! "$_LINK" =~ (yes|true) ]]
+      then
+        if [[ "$_MODE" != "0000" ]]
+        then
+          __dothier_msg d mkdir -m "$_MODE" "$_DST"
+        else
+          __dothier_mode "$_DST" "$_MODE"
+        fi
+      elif [[ "$_LINK" =~ (yes|true) ]]
+      then
+        __dothier_link "$_SRC" "$_DST" "$_MODE"
+      else
+        __dothier_mode "$_DST" "$_MODE"
+      fi
+    fi
+
+    # rfile
+    if [[ "$DH_TYPE" == "rfile" ]]
+    then
+      _DST="${DH_REPO}/${_PATH}"
+      _SRC="$_DST"
+      __dothier_mode "$_DST" "$_MODE"
+    fi
+
+    # file
+    if [[ "$DH_TYPE" == "file" ]]
+    then
+      _DST="${DH_HOME}/${_PATH}"
+      _SRC="${DH_REPO}/${_PATH}"
+
+      if [[ "$_LINK" =~ (yes|true) ]]
+      then
+        __dothier_link "$_SRC" "$_DST" "$_MODE"
+      fi
+    fi
+
+    # link
+    if [[ "$DH_TYPE" == "link" ]]
+    then
+      _DST="${DH_HOME}/${_PATH}"
+      _SRC="${_LINK}"
+      __dothier_link "$_SRC" "$_DST" "$_MODE"
+    fi
+
+  done
+} #__dothier_proc
+
+__dothier_read() {
+  local DH_READ="${1:-"$DH_HIER_FILE"}"
+  local DH_REPO
+
+  local -a DH_RDIR
+  local -a DH_RFILE
+  local -a DH_RGIT
+
+  local -a DH_DIR
+  local -a DH_FILE
+  local -a DH_GIT
+  local -a DH_LINK
+
+  if [[ -z "$DH_READ" ]]
+  then
+    __dothier_msg e "no $DH_HIER_FILE file!"
+    return 1
+  fi
+
+  if [[ ! -e "$DH_READ" ]]
+  then
+    __dothier_msg e "file not found: $DH_READ"
+    return 1
+  fi
+
+  if [[ ! -d "${DH_READ%/*}" ]]
+  then
+    DH_REPO="$PWD"
+  else
+    DH_REPO="$( cd "${DH_READ%/*}" && echo "$PWD" )"
+  fi
+
+  __dothier_msg d "repo: $DH_REPO"
+  __dothier_msg n "hier: $DH_READ"
+
+  local -a _CONT
+  local _READ
+
+  local _PATH
+  local _TYPE
+  local _MODE
+  local _LINK
+  local _TMEX
+  local _MISC
+
+  mapfile -t -n 0 _CONT < <( grep -E "^[^#]" "$DH_READ" )
+
+  for _READ in "${_CONT[@]}"
+  do
+    IFS=$'\t ' read -r _PATH _TYPE _MODE _LINK _MISC <<< "$_READ"
+
+    # default mode
+    local __MODE
+    case "$_TYPE"
+    in
+      rdir|dir|rgit|git)
+        __MODE="$DH_DMODE"
+      ;;
+      rfile|file)
+        __MODE="$DH_FMODE"
+      ;;
+      link)
+        __MODE="inherit"
+      ;;
+    esac
+
+    # swap empty mode
+    if [[ ! "$_MODE" =~ ^(@)?[0-9]+$ ]]
+    then
+      if [[ "$_MODE" =~ ^(yes|no|true|false)$ ]] || [[ "$_MODE" =~ ^(.*)$ ]]
+      then
+        _LINK="$_MODE"
+        _MODE="$__MODE"
+      fi
+    fi
+    unset __MODE
+
+    # tmutil exclude
+    if [[ "$_MODE" =~ ^@ ]]
+    then
+      _TMEX=true
+      _MODE="${_MODE##@}"
+    else
+      _TMEX=false
+    fi
+
+    # default link
+    : "${_LINK:="no"}"
+    : "${_MISC:=""}"
+
+    case "$_TYPE"
+    in
+      rdir)
+        DH_RDIR+=( "$_PATH $_MODE no $_TMEX" )
+      ;;
+      rfile)
+        DH_RFILE+=( "$_PATH $_MODE no $_TMEX" )
+      ;;
+      rgit)
+        DH_RGIT+=( "$_PATH $_MODE $_LINK $_TMEX" )
+      ;;
+      dir)
+        DH_DIR+=( "$_PATH $_MODE $_LINK $_TMEX" )
+      ;;
+      file)
+        DH_FILE+=( "$_PATH $_MODE $_LINK $_TMEX" )
+      ;;
+      git)
+        DH_GIT+=( "$_PATH $_MODE $_LINK $_TMEX" )
+      ;;
+      link)
+        DH_LINK+=( "$_PATH $_MODE $_LINK $_TMEX" )
+      ;;
+    esac
+  done
+
+  # proc
+  ## rgit
+  __dothier_proc rgit "$DH_REPO" "${DH_RGIT[@]}"
+  ## rdir
+  __dothier_proc rdir "$DH_REPO" "${DH_RDIR[@]}"
+  ## rfile
+  __dothier_proc rfile "$DH_REPO" "${DH_RFILE[@]}"
+
+  ## git
+  __dothier_proc git "$DH_REPO" "${DH_GIT[@]}"
+  ## dir
+  __dothier_proc dir "$DH_REPO" "${DH_DIR[@]}"
+  ## file
+  __dothier_proc file "$DH_REPO" "${DH_FILE[@]}"
+  ## link
+  __dothier_proc link "$DH_REPO" "${DH_LINK[@]}"
+
+  return
+} #__dothier_read
+
+__dothier() {
+
+  while getopts ":CH:LRc:d:f:ghk:nqrstu:v" OPT
+  do
+    case "$OPT"
+    in
+      C)  DH_COLOR=false;;
+      H)  DH_HOME="$OPTARG" ;;
+
+      h)  __dothier_help; exit 0 ;;
+
+      q)  DH_QUIET=true ;;
+      r)  DH_RECURSIVE=true ;;
+
+      :)  echo "option: -${OPTARG} required argument missing!"; __dothier_usage; exit 2 ;;
+      ?)  echo "option: -${OPTARG} is unknown!"; __dothier_usage; exit 2 ;;
+    esac
+  done
+
+  # umask
+  umask "$DH_UMASK"
+
+  DH_DMODE="$( printf '%#o' $(( 0777 & ~DH_UMASK )) )"
+  DH_FMODE="$( printf '%#o' $(( 0777 & ~0111 & ~DH_UMASK )) )"
+
+  if [[ ! -d "$DH_HOME" ]]
+  then
+    echo mkdir -p "$DH_HOME"
+  fi
+
+  if [[ "$DH_RECURSIVE" == true ]]
+  then
+    shopt -s globstar
+    shopt -s dotglob
+
+    local _FILE
+
+    # hier
+    for _FILE in "${DH_ROOT}"/**/*
+    do
+      if [[ "${_FILE##*/}" =~ ^${DH_HIER_FILE}$ ]]
+      then
+        __dothier_read "$_FILE"
+      fi
+    done
+    unset _FILE
+
+    shopt -u globstar
+    shopt -u dotglob
+
+    return
+  else
+    __dothier_read
+  fi
+
+} #__dothier
+
+__dothier "$@"
