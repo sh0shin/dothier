@@ -1,0 +1,71 @@
+# (dot)hier                                               #60
+#! <path|git-url>                                         <type>  [[@]mode] [link (yes|no|true|false)|link-source|git-destination]
+
+.                                                         rdir    0700
+.editorconfig                                             rfile   0640
+.private                                                  dir     0700
+.profile                                                  file    0640      yes  # link default: no
+.ssh                                                      dir     0700
+.ssh/id_ed25519.pub                                       file    0644      yes
+https://github.com/sh0shin/dothier.git                    git     0700      dothier-local
+https://github.com/sh0shin/dothier.git                    rgit    0700      dotfiles-local
+https://github.com/sh0shin/dotsomething.git               rgit    0700
+
+## the repository directory itself (~/.dotfiles)
+#.                             rdir    0700
+#
+## files within the repository
+#.editorconfig                 rfile   0640
+#.gitignore                    rfile   0640
+#LICENSE                       rfile   0640
+#README.md                     rfile   0640
+#dothier                       rfile   0750
+#
+## dotfiles collection (not shipped ;)
+## link ~/.dotfiles/.profile to ~/.profile
+#.profile                      file    0640      yes  # link default: no
+#.profile                      file              yes  # mode will be set from umask
+#
+## linking the .profile file
+## link ~/.dotfiles/.profile to ~/.bash_profile
+#.bash_profile                 link              .profile
+#
+## link ~/.profile to ~/.bashrc
+#.bashrc                       link              ~/.profile
+#
+## more dotfiles (mode will be enforced)
+## link ~/.dotfiles/.gnupg to ~/.gnupg
+#.gnupg                        dir     0700      yes
+#
+## creates ~/.ssh (no link)
+#.ssh                          dir     0700
+#
+## link ~/.dotfiles/.ssh/id_ed25519 to ~/.ssh/id_ed25519
+#.ssh/id_ed25519               file    0600      yes
+#
+## link ~/.dotfiles/.ssh/id_ed25519.pub to ~/.ssh/id_ed25519.pub
+#.ssh/id_ed25519.pub           file    0644      yes
+#
+## link ~/.dotfiles/.vimrc -> ~/.vimrc
+#.vimrc                        file    0640      yes
+#
+## just rests within the ~/.dotfiles (mode will be enforced)
+#.screenrc                     file    0640
+#
+## macos directory which will be excluded from time machine backups (@mode)
+#.macos                        dir     @0700
+#
+## delete directory from home (repository stays untouched)
+#.remove-me                    dir     0000
+#
+## delete link from home (repository stays untouched)
+#.link-me-not                  file    0000      yes
+#
+## more...
+#
+## git repositories
+## clone/pull git repositories to/from ~/.dotfiles/<name>
+#.hiergit                      rgit    0600
+#
+## clone/pull git repositories to/from ~/<name>
+#.hiergit                      git     0600
