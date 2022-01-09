@@ -331,6 +331,11 @@ __dothier_proc() {
       __dothier_link "$_SRC" "$_DST" "$_MODE"
     fi
 
+    if [[ "$_TMEX" == "true" ]]
+    then
+      __dothier_msg d "tmutil: $_DST"
+    fi
+
   done
 } #__dothier_proc
 
