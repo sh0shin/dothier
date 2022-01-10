@@ -1,0 +1,47 @@
+# vim: set ft=sh :
+# shellcheck disable=SC2034
+
+# Enable/disable colorized output (-C)
+#DOTHIER_COLOR=true
+
+# Set git clone depth (-D)
+#DOTHIER_GIT_DEPTH=1
+
+# Enable git pull (-G)
+#DOTHIER_GIT_PULL=false
+
+# Home directory (-H)
+#DOTHIER_HOME="$HOME"
+
+# Use git crypt key file (-K)
+#DOTHIER_GIT_KEY=
+
+# Remove/delete mode (-R)
+#DOTHIER_REMOVE=false
+
+# Short message mode (-S)
+#DOTHIER_SHORTMSG=false
+
+# Enable tmutil exclude (macOS only) (-T)
+#DOTHIER_TMUTIL=false
+
+# Set umask (-U)
+#DOTHIER_UMASK=
+
+# Dotfiles root directory for recursive mode (-d)
+#DOTHIER_DOTROOT="$DOTHIER_HOME/.dotfiles"
+
+# Dothier file (-f)
+#DOTHIER_FILE=".hier"
+
+# Enable/disable dry-run (-n)
+#DOTHIER_DRYRUN=false
+
+# Quiet mode (-q)
+#DOTHIER_QUIET=false
+
+# Enable/disable recursive mode (-r)
+#DOTHIER_RECURSIVE=false
+
+# Verbose mode (-v)
+#DOTHIER_VERBOSE=false
