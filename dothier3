@@ -39,6 +39,7 @@ readonly DH_SELF_PATH="${DH_SELF_FILE%/*}"
 readonly DH_SELF_VERSION="v0.3.0"
 readonly DH_SELF_URL="https://sh0shin.org/dothier"
 
+# <level> <message>
 __dothier_msg() {
   local DH_LEVEL="$1"
   shift
@@ -53,12 +54,12 @@ __dothier_msg() {
   local _COLOR=""
   local _NOCOLOR=""
 
-  if [[ "$DH_SHORTMSG" == true ]]
+  if [[ "$DOTHIER_SHORTMSG" == true ]]
   then
     _MSG="${_MSG//${HOME}/\~}"
   fi
 
-  if [[ "$DH_COLOR" == true ]]
+  if [[ "$DOTHIER_COLOR" == true ]]
   then
     case "$DH_LEVEL"
     in
@@ -69,28 +70,21 @@ __dothier_msg() {
         _COLOR="\033[0;33m"
       ;;
       n|notice)
-        if [[ $DH_QUIET == true ]]
+        if [[ $DOTHIER_QUIET == true ]]
         then
           return
         fi
         _COLOR="\033[0;37m"
       ;;
       i|info)
-        if [[ $DH_QUIET == true ]]
-        then
-          return
-        fi
-        _COLOR="\033[0;36m"
-      ;;
-      d|debug)
-        if [[ $DH_QUIET == true ]] || [[ $DH_VERBOSE == false ]]
+        if [[ $DOTHIER_QUIET == true ]]
         then
           return
         fi
         _COLOR="\033[0;36m"
       ;;
       v|verbose)
-        if [[ $DH_QUIET == true ]] || [[ $DH_VERBOSE == false ]]
+        if [[ $DOTHIER_QUIET == true ]] || [[ $DOTHIER_VERBOSE == false ]]
         then
           return
         fi
@@ -103,7 +97,7 @@ __dothier_msg() {
     _NOCOLOR="\033[0m"
   fi
 
-  >&2 echo -e "${_COLOR}${_NAME}\t${_MSG}${_NOCOLOR}"
+  echo -e "${_COLOR}${_NAME}\t${_MSG}${_NOCOLOR}"
   return
 } #__dothier_msg
 
@@ -132,6 +126,67 @@ __dothier_stat() {
   echo "${DH_STAT:(-4)}"
 } #__dothier_stat
 
+
+# <url> <dst> <mode>
+__dothier_git() {
+  local DH_URL="$1"
+  local DH_DST="$2"
+  local DH_MODE="$3"
+
+  if [[ ! -d "$DH_DST" ]]
+  then
+    __dothier_msg i "clone: $DH_URL $DH_DST"
+    $DH_RUN git clone --depth "$DOTHIER_GIT_DEPTH" "$DH_URL" "$DH_DST"
+    __dothier_mode "$DH_DST" "$DH_MODE"
+  else
+    if [[ "$DOTHIER_GIT_PULL" == true ]]
+    then
+      __dothier_msg i "pull: $DH_DST"
+      $DH_RUN git -C "$DH_DST" pull
+    else
+      __dothier_msg v "no pull: $DH_DST"
+    fi
+
+    __dothier_mode "$DH_DST" "$DH_MODE"
+  fi
+} #__dothier_git
+
+# <repo> <file>
+declare DH_CRYPT_REPO=""
+__dothier_crypt() {
+  local DH_REPO="$1"
+  local DH_FILE="$2"
+  local -a _GREP
+
+  if [[ "$DH_REPO" == "$DH_CRYPT_REPO" ]]
+  then
+    __dothier_msg v "unlocked: $DH_REPO"
+    return
+  fi
+
+  if [[ -n "$DOTHIER_GIT_KEY" ]]
+  then
+    if [[ -e "$DOTHIER_GIT_KEY" ]]
+    then
+
+      if [[ "$OSTYPE" =~ (darwin|freebsd) ]]
+      then
+        _GREP=( "-rq" )
+      elif [[ "$OSTYPE" =~ linux ]]
+      then
+        _GREP=( "-qrsPa" )
+      fi
+
+      if grep "${_GREP[@]}" "\x00GITCRYPT" "$DH_FILE"
+      then
+        __dothier_msg i "unlock: $DH_REPO"
+        $DH_RUN git -C "$DH_REPO" crypt unlock "$DOTHIER_GIT_KEY"
+        DH_CRYPT_REPO="$DH_REPO"
+      fi
+    fi
+  fi
+} #__dothier_crypt
+
 # <path> <mode>
 __dothier_mode() {
   local DH_PATH="$1"
@@ -140,26 +195,59 @@ __dothier_mode() {
 
   if [[ "$DH_MODE" == "0000" ]]
   then
-    if [[ -d "$DH_PATH" ]]
+    if [[ -L "$DH_PATH" ]]
     then
-      __dothier_msg d "rmdir: $DH_PATH"
-    elif [[ -L "$DH_PATH" ]]
+      __dothier_msg i "rmlink: $DH_PATH"
+      $DH_RUNRM rm "$DH_PATH"
+    elif [[ -d "$DH_PATH" ]]
     then
-      __dothier_msg d "rmlink: $DH_PATH"
+      __dothier_msg i "rmdir: $DH_PATH"
+      $DH_RUNRM rmdir "$DH_PATH"
     elif [[ -f "$DH_PATH" ]]
     then
-      __dothier_msg d "rmfile: $DH_PATH"
+      __dothier_msg i "rmfile: $DH_PATH"
+      $DH_RUNRM rm "$DH_PATH"
     fi
   else
-    _MODE="$( __dothier_stat "$DH_PATH" )"
-
-    if [[ "$_MODE" != "$DH_MODE" ]]
+    if [[ "$DOTHIER_DRYRUN" == false ]]
     then
-      __dothier_msg w "chmod: $DH_MODE $DH_PATH ($_MODE)"
-      chmod "$DH_MODE" "$DH_PATH"
+      _MODE="$( __dothier_stat "$DH_PATH" )"
+
+      if [[ "$_MODE" != "$DH_MODE" ]]
+      then
+        __dothier_msg i "chmod: $DH_MODE $DH_PATH ($_MODE)"
+        $DH_RUN chmod "$DH_MODE" "$DH_PATH"
+      else
+        __dothier_msg v "ok: $DH_PATH ($DH_MODE)"
+      fi
     fi
   fi
 } #__dothier_mode
+
+# <src> <dst> <mode> <link>
+__dothier_dir() {
+  local DH_SRC="$1"
+  local DH_DST="$2"
+  local DH_MODE="$3"
+  local DH_LINK="$4"
+
+  if [[ ! -d "$DH_DST" ]] && [[ ! "$DH_LINK" =~ (yes|true) ]]
+  then
+    if [[ "$DH_MODE" != "0000" ]]
+    then
+      __dothier_msg i "mkdir: $DH_DST"
+      $DH_RUN mkdir -m "$DH_MODE" "$DH_DST"
+    else
+      __dothier_mode "$DH_DST" "$DH_MODE"
+    fi
+  elif [[ "$DH_LINK" =~ (yes|true) ]]
+  then
+    __dothier_link "$DH_SRC" "$DH_DST" "$DH_MODE"
+  else
+    __dothier_msg v "ok: $DH_DST"
+    __dothier_mode "$DH_DST" "$DH_MODE"
+  fi
+} # __dothier_dir
 
 # <src> <dst> <mode>
 __dothier_link() {
@@ -184,20 +272,58 @@ __dothier_link() {
 
     if [[ "$_LINK" != "$_SRC" ]]
     then
-      __dothier_msg w "link: wrong $_LINK ($_SRC)"
+      __dothier_msg w "rmlink: wrong $_LINK ($_SRC)"
+      $DH_RUNRM rm "$_DST"
+      __dothier_msg i "link: $_SRC $_DST"
+      $DH_RUNRM ln -s "$_SRC" "$_DST"
+    else
+      __dothier_msg v "ok: $_DST"
     fi
 
   elif [[ ! -L "$_DST" ]] && [[ "$_MODE" != "0000" ]]
   then
-    __dothier_msg d "link: $_SRC $_DST"
+    if [[ -e "$_SRC" ]]
+    then
+      __dothier_msg i "link: $_SRC $_DST"
+      $DH_RUN ln -s "$_SRC" "$_DST"
+    else
+      __dothier_msg e "$_SRC not found!"
+    fi
   fi
 } #__dothier_link
 
+# <path> <tmex>
 __dothier_tmutil() {
   local DH_PATH="$1"
+  local DH_TMEX="$2"
 
-  __dothier_msg d "tmutil: $DH_PATH"
-}
+  if [[ ! "$OSTYPE" =~ darwin ]]
+  then
+    return
+  fi
+
+  if [[ -d "$DH_PATH" ]] && [[ ! -L "$DH_PATH" ]]
+  then
+    if ( xattr "$DH_PATH" | grep -q com_apple_backup_excludeItem )
+    then
+
+      if [[ "$DH_TMEX" == false ]]
+      then
+        __dothier_msg i "remove exclusion: $DH_PATH"
+        $DH_RUN tmutil removeexclusion "$DH_PATH"
+      else
+        __dothier_msg v "ok: $DH_PATH"
+      fi
+
+    elif [[ "$DH_TMEX" == true ]]
+    then
+      __dothier_msg i "add exclusion: $DH_PATH"
+      $DH_RUN tmutil addexclusion "$DH_PATH"
+    else
+      __dothier_msg v "ok: $DH_PATH"
+    fi
+  fi
+} #__dothier_tmutil
 
 __dothier_proc() {
   local DH_TYPE="$1"
@@ -230,28 +356,14 @@ __dothier_proc() {
         # default destination from url
         if [[ "$_LINK" =~ (no|false) ]]
         then
-          _DST="${DH_HOME}/${_PATH##*/}"
+          _DST="${DOTHIER_HOME}/${_PATH##*/}"
           _DST="${_DST//.git}"
         else
-          _DST="${DH_HOME}/${_LINK}"
+          _DST="${DOTHIER_HOME}/${_LINK}"
         fi
       fi
 
-      if [[ ! -d "$_DST" ]]
-      then
-        __dothier_msg i "git clone: $_PATH $_DST"
-        echo -ne '\033[0;35m'
-        git clone --depth "$DH_GIT_DEPTH" "$_PATH" "$_DST"
-        echo -ne '\033[0m'
-      else
-        if [[ "$DH_GIT_PULL" == true ]]
-        then
-          __dothier_msg i "git pull: $_DST"
-          echo -ne '\033[0;35m'
-          git -C "$_DST" pull
-          echo -ne '\033[0m'
-        fi
-      fi
+      __dothier_git "$_PATH" "$_DST" "$_MODE"
     fi
 
     # rdir
@@ -269,23 +381,10 @@ __dothier_proc() {
     # dir
     if [[ "$DH_TYPE" == "dir" ]]
     then
-      _DST="${DH_HOME}/${_PATH}"
+      _DST="${DOTHIER_HOME}/${_PATH}"
       _SRC="${DH_REPO}/${_PATH}"
 
-      if [[ ! -d "$_DST" ]] && [[ ! "$_LINK" =~ (yes|true) ]]
-      then
-        if [[ "$_MODE" != "0000" ]]
-        then
-          __dothier_msg d mkdir -m "$_MODE" "$_DST"
-        else
-          __dothier_mode "$_DST" "$_MODE"
-        fi
-      elif [[ "$_LINK" =~ (yes|true) ]]
-      then
-        __dothier_link "$_SRC" "$_DST" "$_MODE"
-      else
-        __dothier_mode "$_DST" "$_MODE"
-      fi
+      __dothier_dir "$_SRC" "$_DST" "$_MODE" "$_LINK"
     fi
 
     # rfile
@@ -299,8 +398,10 @@ __dothier_proc() {
     # file
     if [[ "$DH_TYPE" == "file" ]]
     then
-      _DST="${DH_HOME}/${_PATH}"
+      _DST="${DOTHIER_HOME}/${_PATH}"
       _SRC="${DH_REPO}/${_PATH}"
+
+      __dothier_crypt "$DH_REPO" "$_SRC"
 
       if [[ "$_LINK" =~ (yes|true) ]]
       then
@@ -311,12 +412,12 @@ __dothier_proc() {
     # link
     if [[ "$DH_TYPE" == "link" ]]
     then
-      _DST="${DH_HOME}/${_PATH}"
+      _DST="${DOTHIER_HOME}/${_PATH}"
       _SRC="${_LINK}"
       __dothier_link "$_SRC" "$_DST" "$_MODE"
     fi
 
-    if [[ "$DH_TMUTIL" == true ]]
+    if [[ "$DOTHIER_TMUTIL" == true ]]
     then
       __dothier_tmutil "$_DST" "$_TMEX"
     fi
@@ -325,7 +426,7 @@ __dothier_proc() {
 } #__dothier_proc
 
 __dothier_read() {
-  local DH_READ="${1:-"$DH_HIER_FILE"}"
+  local DH_READ="${1:-"$DOTHIER_FILE"}"
   local DH_REPO
 
   local -a DH_RDIR
@@ -339,7 +440,7 @@ __dothier_read() {
 
   if [[ -z "$DH_READ" ]]
   then
-    __dothier_msg e "no $DH_HIER_FILE file!"
+    __dothier_msg e "no $DOTHIER_FILE file!"
     return 1
   fi
 
@@ -356,7 +457,7 @@ __dothier_read() {
     DH_REPO="$( cd "${DH_READ%/*}" && echo "$PWD" )"
   fi
 
-  __dothier_msg d "repo: $DH_REPO"
+  __dothier_msg v "repo: $DH_REPO"
   __dothier_msg n "hier: $DH_READ"
 
   local -a _CONT
@@ -461,77 +562,105 @@ __dothier_read() {
 } #__dothier_read
 
 # -C
-declare DH_COLOR="${DOTHIER_COLOR:-true}"
+declare DOTHIER_COLOR="${DOTHIER_COLOR:-true}"
 # -G
-declare DH_GIT_PULL="${DOTHIER_GIT_PULL:-false}"
-declare DH_GIT_DEPTH="${DOTHIER_GIT_DEPTH:-1}"
+declare DOTHIER_GIT_PULL="${DOTHIER_GIT_PULL:-false}"
+declare DOTHIER_GIT_DEPTH="${DOTHIER_GIT_DEPTH:-1}"
 # -H
-declare DH_HOME="${DOTHIER_HOME:-"$HOME"}"
+declare DOTHIER_HOME="${DOTHIER_HOME:-"$HOME"}"
+# -K
+declare DOTHIER_GIT_KEY="${DOTHIER_GIT_KEY:-""}"
 # -R
-declare DH_REMOVE="${DOTHIER_REMOVE:-false}"
+declare DOTHIER_REMOVE="${DOTHIER_REMOVE:-false}"
+declare DH_RUNRM="echo -e \t(no-remove): "
 # -S
-declare DH_SHORTMSG="${DOTHIER_SHORTMSG:-false}"
+declare DOTHIER_SHORTMSG="${DOTHIER_SHORTMSG:-false}"
 # -T
-declare DH_TMUTIL="${DOTHIER_TMUTIL:-false}"
+declare DOTHIER_TMUTIL="${DOTHIER_TMUTIL:-false}"
 
 # -c
-declare DH_CONFIG="${DOTHIER_CONFIG:-"${HOME}/.config/dothier"}"
+declare DOTHIER_CONFIG="${DOTHIER_CONFIG:-"${HOME}/.config/dothier"}"
 # -d
-declare DH_ROOT="${DOTHIER_ROOT:-"${DH_HOME}/.dotfiles"}"
+declare DOTHIER_DOTROOT="${DOTHIER_DOTROOT:-"${DOTHIER_HOME}/.dotfiles"}"
 
 # -f
-declare DH_HIER_FILE="${DOTHIER_HIER_FILE:-".hier"}"
+declare DOTHIER_FILE="${DOTHIER_FILE:-".hier"}"
 
-
-declare DH_UMASK="${DOTHIER_UMASK:-"$( umask )"}"
+declare DOTHIER_UMASK="${DOTHIER_UMASK:-"$( umask )"}"
 declare DH_DMODE="0755"
 declare DH_FMODE="0644"
 
-declare DH_DRYRUN="${DOTHIER_DRYRUN:-false}"
+# -n
+declare DOTHIER_DRYRUN="${DOTHIER_DRYRUN:-false}"
 declare DH_RUN="command"
 
 # -q
-declare DH_QUIET="${DOTHIER_QUIET:-false}"
+declare DOTHIER_QUIET="${DOTHIER_QUIET:-false}"
 # -r
-declare DH_RECURSIVE="${DOTHIER_RECURSIVE:-false}"
+declare DOTHIER_RECURSIVE="${DOTHIER_RECURSIVE:-false}"
 # -v
-declare DH_VERBOSE="${DOTHIER_VERBOSE:-false}"
+declare DOTHIER_VERBOSE="${DOTHIER_VERBOSE:-false}"
 
 __dothier() {
-  while getopts ":CGH:LRSc:d:f:ghk:nqrstu:v" OPT
+  # config
+  if [[ -e "$DOTHIER_CONFIG" ]]
+  then
+    __dothier_msg n "config: $DOTHIER_CONFIG"
+    # shellcheck disable=SC1090
+    source "$DOTHIER_CONFIG"
+  fi
+
+  while getopts ":CGH:K:RSTc:d:f:ghk:nqrstu:v" OPT
   do
     case "$OPT"
     in
       C)
-        DH_COLOR=false
+        DOTHIER_COLOR=false
       ;;
       G)
-        DH_GIT_PULL=true
+        DOTHIER_GIT_PULL=true
       ;;
       H)
-        DH_HOME="$OPTARG"
+        DOTHIER_HOME="$OPTARG"
+      ;;
+      K)
+        DOTHIER_GIT_KEY="$OPTARG"
+      ;;
+      R)
+        DOTHIER_REMOVE=true
+        DH_RUNRM="command"
       ;;
       S)
-        DH_SHORTMSG=true
+        DOTHIER_SHORTMSG=true
+      ;;
+      T)
+        DOTHIER_TMUTIL=true
       ;;
       c)
-        DH_CONFIG="$OPTARG"
+        DOTHIER_CONFIG="$OPTARG"
       ;;
       d)
-        DH_ROOT="$OPTARG"
+        DOTHIER_DOTROOT="$OPTARG"
       ;;
       h)
         __dothier_help
         exit 0
       ;;
+      n)
+        DOTHIER_DRYRUN=true
+        DH_RUN="echo -e \t(dry-run): "
+      ;;
       q)
-        DH_QUIET=true
+        DOTHIER_QUIET=true
       ;;
       r)
-        DH_RECURSIVE=true
+        DOTHIER_RECURSIVE=true
+      ;;
+      u)
+        DOTHIER_UMASK="$OPTARG"
       ;;
       v)
-        DH_VERBOSE=true
+        DOTHIER_VERBOSE=true
       ;;
       :)
         __dothier_msg e "option: -${OPTARG} required argument missing!"
@@ -545,17 +674,17 @@ __dothier() {
   done
 
   # umask
-  umask "$DH_UMASK"
+  umask "$DOTHIER_UMASK"
 
-  DH_DMODE="$( printf '%#o' $(( 0777 & ~DH_UMASK )) )"
-  DH_FMODE="$( printf '%#o' $(( 0777 & ~0111 & ~DH_UMASK )) )"
+  DH_DMODE="$( printf '%#o' $(( 0777 & ~DOTHIER_UMASK )) )"
+  DH_FMODE="$( printf '%#o' $(( 0777 & ~0111 & ~DOTHIER_UMASK )) )"
 
-  if [[ ! -d "$DH_HOME" ]]
+  if [[ ! -d "$DOTHIER_HOME" ]]
   then
-    echo mkdir -p "$DH_HOME"
+    echo mkdir -p "$DOTHIER_HOME"
   fi
 
-  if [[ "$DH_RECURSIVE" == true ]]
+  if [[ "$DOTHIER_RECURSIVE" == true ]]
   then
     shopt -s globstar
     shopt -s dotglob
@@ -563,9 +692,9 @@ __dothier() {
     local _FILE
 
     # hier
-    for _FILE in "${DH_ROOT}"/**/*
+    for _FILE in "${DOTHIER_DOTROOT}"/**/*
     do
-      if [[ "${_FILE##*/}" =~ ^${DH_HIER_FILE}$ ]]
+      if [[ "${_FILE##*/}" =~ ^${DOTHIER_FILE}$ ]]
       then
         __dothier_read "$_FILE"
       fi
