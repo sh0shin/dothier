@@ -102,11 +102,32 @@ __dothier_msg() {
 } #__dothier_msg
 
 __dothier_usage() {
-  echo "$DH_SELF_NAME $DH_SELF_VERSION ( $DH_SELF_URL )"
+  echo "$DH_SELF_NAME $DH_SELF_VERSION ($DH_SELF_URL)"
 } #__dothier_usage
 
 __dothier_help() {
   __dothier_usage
+
+  echo "Options:"
+  echo
+  echo " -C       : Disable colorized messages"
+  echo " -D depth : Set git clone depth (default: $DOTHIER_GIT_DEPTH)"
+  echo " -G       : Enable git pull (default: $DOTHIER_GIT_PULL)"
+  echo " -H home  : Home directory (default: $DOTHIER_HOME)"
+  echo " -K file  : Use git-crypt key file"
+  echo " -R       : Enable remove/delete mode (default: $DOTHIER_REMOVE)"
+  echo " -S       : Enable short message mode (default: $DOTHIER_SHORTMSG)"
+  echo " -T       : Enable tmutil exclude (macOS only default: $DOTHIER_TMUTIL)"
+  echo " -U       : Set umask (default: $DOTHIER_UMASK)"
+
+  echo " -d dir   : Dotfiles root directory for recursive mode (default: $DOTHIER_DOTROOT)"
+  echo " -f file  : Dothier file (default: $DOTHIER_FILE)"
+  echo " -h       : Show this help"
+  echo " -n       : Enable dry-run mode (default: $DOTHIER_DRYRUN)"
+  echo " -q       : Enable quiet mode (default: $DOTHIER_QUIET)"
+  echo " -r       : Enable recursive mode (see: -d default: $DOTHIER_RECURSIVE)"
+  echo " -v       : Be verbose (default: $DOTHIER_VERBOSE)"
+
 } #__dothier_help
 
 __dothier_stat() {
@@ -610,12 +631,15 @@ __dothier() {
     source "$DOTHIER_CONFIG"
   fi
 
-  while getopts ":CGH:K:RSTc:d:f:ghk:nqrstu:v" OPT
+  while getopts ":CD:GH:K:RSTU:c:d:f:hnqrv" OPT
   do
     case "$OPT"
     in
       C)
         DOTHIER_COLOR=false
+      ;;
+      D)
+        DOTHIER_GIT_DEPTH="$OPTARG"
       ;;
       G)
         DOTHIER_GIT_PULL=true
@@ -636,6 +660,9 @@ __dothier() {
       T)
         DOTHIER_TMUTIL=true
       ;;
+      U)
+        DOTHIER_UMASK="$OPTARG"
+      ;;
       c)
         DOTHIER_CONFIG="$OPTARG"
       ;;
@@ -655,9 +682,6 @@ __dothier() {
       ;;
       r)
         DOTHIER_RECURSIVE=true
-      ;;
-      u)
-        DOTHIER_UMASK="$OPTARG"
       ;;
       v)
         DOTHIER_VERBOSE=true
