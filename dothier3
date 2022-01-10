@@ -715,6 +715,13 @@ __dothier() {
 
     local _FILE
 
+    # root
+    if [[ -d "${DOTHIER_DOTROOT}/.git" ]]
+    then
+      _URL="$( git -C "$DOTHIER_ROOT" remote get-url origin )"
+      __dothier_git "$_URL" "$DOTHIER_ROOT" "$DH_DMODE"
+    fi
+
     # hier
     for _FILE in "${DOTHIER_DOTROOT}"/**/*
     do
