@@ -447,7 +447,7 @@ __dothier_proc() {
       __dothier_link "$_SRC" "$_DST" "$_MODE"
     fi
 
-    if [[ "$DOTHIER_TMUTIL" == true ]]
+    if [[ "$DOTHIER_TMUTIL" == true ]] && [[ "$_MODE" != "0000" ]]
     then
       __dothier_tmutil "$_DST" "$_TMEX"
     fi
