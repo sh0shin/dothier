@@ -134,17 +134,19 @@ __dothier_stat() {
   local DH_PATH="$1"
   local DH_STAT
 
-  case "$OSTYPE"
-  in
-    darwin*|freebsd*|openbsd*)
-      DH_STAT="$( stat -f "%Mp%Lp" "$DH_PATH" )"
-    ;;
-    linux*)
-      DH_STAT="$( stat -c "%#a" "$DH_PATH" )"
-    ;;
-  esac
-
-  echo "${DH_STAT:(-4)}"
+  if [[ -e "$DH_PATH" ]]
+  then
+    case "$OSTYPE"
+    in
+      darwin*|freebsd*|openbsd*)
+        DH_STAT="$( stat -f "%Mp%Lp" "$DH_PATH" )"
+      ;;
+      linux*)
+        DH_STAT="$( stat -c "%#a" "$DH_PATH" )"
+      ;;
+    esac
+    echo "${DH_STAT:(-4)}"
+  fi
 } #__dothier_stat
 
 
@@ -230,17 +232,14 @@ __dothier_mode() {
       $DH_RUNRM rm "$DH_PATH"
     fi
   else
-    if [[ "$DOTHIER_DRYRUN" == false ]]
-    then
-      _MODE="$( __dothier_stat "$DH_PATH" )"
+    _MODE="$( __dothier_stat "$DH_PATH" )"
 
-      if [[ "$_MODE" != "$DH_MODE" ]]
-      then
-        __dothier_msg i "chmod: $DH_MODE $DH_PATH ($_MODE)"
-        $DH_RUN chmod "$DH_MODE" "$DH_PATH"
-      else
-        __dothier_msg v "ok: $DH_PATH ($DH_MODE)"
-      fi
+    if [[ -n "$_MODE" ]] && [[ "$_MODE" != "$DH_MODE" ]] && [[ ! -L "$DH_PATH" ]]
+    then
+      __dothier_msg i "chmod: $DH_MODE $DH_PATH ($_MODE)"
+      $DH_RUN chmod "$DH_MODE" "$DH_PATH"
+    else
+      __dothier_msg v "ok: $DH_PATH ($DH_MODE)"
     fi
   fi
 } #__dothier_mode
@@ -297,8 +296,10 @@ __dothier_link() {
       $DH_RUNRM rm "$_DST"
       __dothier_msg i "link: $_SRC $_DST"
       $DH_RUNRM ln -s "$_SRC" "$_DST"
+      __dothier_mode "$_SRC" "$_MODE"
     else
       __dothier_msg v "ok: $_DST"
+      __dothier_mode "$_SRC" "$_MODE"
     fi
 
   elif [[ ! -L "$_DST" ]] && [[ "$_MODE" != "0000" ]]
@@ -307,8 +308,9 @@ __dothier_link() {
     then
       __dothier_msg i "link: $_SRC $_DST"
       $DH_RUN ln -s "$_SRC" "$_DST"
+      __dothier_mode "$_SRC" "$_MODE"
     else
-      __dothier_msg e "$_SRC not found!"
+      __dothier_msg e "not found: $_SRC"
     fi
   fi
 } #__dothier_link
@@ -406,6 +408,11 @@ __dothier_proc() {
       _SRC="${DH_REPO}/${_PATH}"
 
       __dothier_dir "$_SRC" "$_DST" "$_MODE" "$_LINK"
+
+      if [[ "$_MODE" != "0000" ]]
+      then
+        __dothier_mode "$_SRC" "$_MODE"
+      fi
     fi
 
     # rfile
@@ -427,6 +434,8 @@ __dothier_proc() {
       if [[ "$_LINK" =~ (yes|true) ]]
       then
         __dothier_link "$_SRC" "$_DST" "$_MODE"
+      else
+        __dothier_mode "$_SRC" "$_MODE"
       fi
     fi
 
@@ -467,7 +476,7 @@ __dothier_read() {
 
   if [[ ! -e "$DH_READ" ]]
   then
-    __dothier_msg e "file not found: $DH_READ"
+    __dothier_msg e "not found: $DH_READ"
     return 1
   fi
 
